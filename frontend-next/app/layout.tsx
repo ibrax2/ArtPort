@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,9 +28,25 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <header>Navbar</header>
-        {children}                {/*indivual pages start here*/}
-        <footer>Footer</footer>
+        
+        <header style={{
+          backgroundColor: '#ffd29e',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px',
+        }}>
+          
+        <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '24px' }}>
+          <Link href="/">ArtPort</Link>     {/* logo that acts as a route to home page */}
+        </span>
+
+        <nav style={{ display: 'flex', gap: '16px' }}>
+          <Link href="/user_profile" style={{ color: 'white', textDecoration: 'none' }}>Profile</Link>
+        </nav>
+        </header>
+
+        {children}                    {/*indivual pages start here*/}
       
       </body>
     </html>
