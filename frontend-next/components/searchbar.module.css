@@ -1,0 +1,74 @@
+.searchbarContainer {
+  width: 300px;       
+  height: 40px;       
+  border-radius: 20px;
+  border: 1px solid #000;
+  background: #ffedd8;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  flex: 1;
+  padding-left: 12px;   
+  padding-right: 12px;  
+  border: none;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #000;
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; 
+}
+
+.searchDropdown {
+  width: 100px;       
+  height: 40px;
+  border: none;
+  border-left: 1px solid #000;
+  border-radius: 0 20px 20px 0;
+  background: #c58c4b;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;    
+  color: #000;
+  text-align: center;
+  appearance: none;
+  cursor: pointer;
+  outline: none;           
+  box-shadow: none;        
+}
+
+.dropdownArrow {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%) rotate(180deg);
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.dropdownWrapper {
+  width: 100px;
+  height: 40px;
+  position: relative;
+
+  border-left: 1px solid #000;
+  border-radius: 0 20px 20px 0;
+  background: #A6A6A6;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchIcon {
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  margin-right: 8px;
+}

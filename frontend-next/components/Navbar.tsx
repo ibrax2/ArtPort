@@ -1,9 +1,14 @@
 'use client'
 import Link from "next/link";
 import { useState } from 'react'
+import SearchBar from "./searchbar";
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false)
+
+    const handleSearch = (query, filter) => {
+        console.log("Searching:", query, "Filter:", filter)
+    }
 
     return (
         <header style={{
@@ -12,17 +17,38 @@ export default function Navbar() {
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '12px',
+            gap: '16px'
         }}>
 
-            <Link href="/"
-                style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '24px' }}>
-                ArtPort     {/* logo that acts as a route to home page */}
+            {/* Logo */}
+            <Link
+                href="/"
+                style={{
+                    color: '#ffffff',
+                    fontWeight: 'bold',
+                    fontSize: '24px',
+                    whiteSpace: 'nowrap'
+                }}
+            >
+                ArtPort
             </Link>
 
 
+            {/* Search bar container */}
+            <div style={{
+                flex: 1,
+                maxWidth: '500px'
+            }}>
+                <SearchBar
+                    placeholder="Search artwork..."
+                    onSearch={handleSearch}
+                />
+            </div>
+
+
+            {/* Profile dropdown */}
             <div style={{ position: 'relative' }}>
 
-                {/* profile icon button */}
                 <div
                     onClick={() => setIsOpen(!isOpen)}
                     style={{
@@ -31,10 +57,10 @@ export default function Navbar() {
                         borderRadius: '50%',
                         backgroundColor: '#ffffff',
                         cursor: 'pointer',
+                        flexShrink: 0
                     }}
                 />
 
-                {/* dropdown menu - only shows when isOpen is true */}
                 {isOpen && (
                     <div style={{
                         position: 'absolute',
@@ -49,7 +75,13 @@ export default function Navbar() {
                         <Link
                             href="/user_profile"
                             onClick={() => setIsOpen(false)}
-                            style={{ color: '#f29f41', fontWeight: 'bold', textDecoration: 'none', display: 'block', padding: '8px' }}
+                            style={{
+                                color: '#f29f41',
+                                fontWeight: 'bold',
+                                textDecoration: 'none',
+                                display: 'block',
+                                padding: '8px'
+                            }}
                         >
                             Profile
                         </Link>
@@ -57,7 +89,13 @@ export default function Navbar() {
                         <Link
                             href="/user_profile"
                             onClick={() => setIsOpen(false)}
-                            style={{ color: '#f29f41', fontWeight: 'bold', textDecoration: 'none', display: 'block', padding: '8px' }}
+                            style={{
+                                color: '#f29f41',
+                                fontWeight: 'bold',
+                                textDecoration: 'none',
+                                display: 'block',
+                                padding: '8px'
+                            }}
                         >
                             My Works
                         </Link>
@@ -65,13 +103,20 @@ export default function Navbar() {
                         <Link
                             href=""
                             onClick={() => setIsOpen(false)}
-                            style={{ color: '#f29f41', fontWeight: 'bold', textDecoration: 'none', display: 'block', padding: '8px' }}
+                            style={{
+                                color: '#f29f41',
+                                fontWeight: 'bold',
+                                textDecoration: 'none',
+                                display: 'block',
+                                padding: '8px'
+                            }}
                         >
                             Settings
                         </Link>
                     </div>
                 )}
             </div>
+
         </header>
     )
 }
