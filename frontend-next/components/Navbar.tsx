@@ -6,7 +6,7 @@ import SearchBar from "./searchbar";
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false)
 
-    const handleSearch = (query, filter) => {
+    const handleSearch = (query: any, filter: any) => {
         console.log("Searching:", query, "Filter:", filter)
     }
 
