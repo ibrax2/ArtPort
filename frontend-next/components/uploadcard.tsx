@@ -74,7 +74,7 @@ export default function UploadCardExact() {
           id="title"
           type="text"
           className={styles.textInput}
-          placeholder="Enter title..."
+          placeholder="Enter title"
         />
       </div>
 
@@ -86,7 +86,7 @@ export default function UploadCardExact() {
         <textarea
           id="description"
           className={styles.textareaInput}
-          placeholder="Enter description..."
+          placeholder="Enter description"
         />
       </div>
 

@@ -26,7 +26,7 @@ export default function SearchBar({ placeholder = "Search", onSearch }) {
 
   return (
     <div className={styles.searchbarContainer}>
-      <img src="/search_icon.svg" alt="search icon" className={styles.searchIcon} />
+      <img src="https://raw.githubusercontent.com/hanandin/ArtPort/main/frontend-next/public/search_icon.svg" alt="search icon" className={styles.searchIcon} />
 
       <input
         type="text"
@@ -40,7 +40,7 @@ export default function SearchBar({ placeholder = "Search", onSearch }) {
       <div className={styles.dropdownWrapper} ref={wrapperRef} onClick={() => setOpen(!open)}>
         <div className={styles.selected}>{filter}</div>
         <img
-          src="/dropdown_arrow.svg"
+          src="https://raw.githubusercontent.com/hanandin/ArtPort/main/frontend-next/public/dropdown_arrow.svg"
           alt="arrow"
           className={`${styles.dropdownArrow} ${open ? styles.open : ''}`}
         />
