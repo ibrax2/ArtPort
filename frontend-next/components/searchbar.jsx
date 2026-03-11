@@ -26,7 +26,7 @@ export default function SearchBar({ placeholder = "Search", onSearch }) {
 
   return (
     <div className={styles.searchbarContainer}>
-      <img src="/search_icon.svg" alt="search icon" className={styles.searchIcon} />
+      <img src="./search_icon.svg" alt="search icon" className={styles.searchIcon} />
 
       <input
         type="text"

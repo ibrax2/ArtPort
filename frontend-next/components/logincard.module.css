@@ -7,7 +7,7 @@
 }
 
 .loginText {
-  @apply text-black text-[64px] font-normal not-italic leading-[normal] text-center;
+  @apply text-black text-[50px] font-normal not-italic leading-[normal] text-center;
   font-family: Arial, sans-serif;
 }
 
@@ -23,16 +23,16 @@
 }
 
 .signupLink {
-  @apply text-[#215A80] text-[50px] font-normal not-italic leading-[normal] mt-2 cursor-pointer items-center justify-center mx-auto;
+  @apply text-[#215A80] text-[25px] font-normal not-italic leading-[normal] mt-2 cursor-pointer items-center justify-center mx-auto;
   font-family: Arial, sans-serif;
 }
 
 .boxLabels {
-  @apply text-black text-[40px] font-normal not-italic leading-[normal] w-[442px];
+  @apply text-black text-[30px] font-normal not-italic leading-[normal] w-[442px];
   font-family: Arial, sans-serif;
 }
 
 .loginButtonLabel {
-  @apply text-white text-[50px] font-normal not-italic leading-[normal];
+  @apply text-white text-[35px] font-normal not-italic leading-[normal];
   font-family: Arial, sans-serif;
 }
