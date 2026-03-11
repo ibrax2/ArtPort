@@ -1,35 +1,50 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const artworkSchema = new mongoose.Schema({
-    author: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+const artworkSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    folderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Folder",
+      default: null,
     },
     title: {
-        type: String,
-        required: true,
-        trim: true,
-        maxlength: 100
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 100,
     },
     description: {
-        // e.g., "Advice for coloring!", "Help with proportions"
-        type: String,
-        required: true,
-        trim: true,
-        maxlength: 1000
+      type: String,
+      trim: true,
+      maxlength: 1000,
+      default: "",
     },
-    imageUrl: {
-        // URL from AWS S3
-        type: String,
-        required: true
+    filePath: {
+      type: String,
+      required: true,
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-}, {
-    timestamps: true
-});
+    thumbnailPath: {
+      type: String,
+      default: "",
+    },
+    uploadDate: {
+      type: Date,
+      default: Date.now,
+    },
+    isPublic: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
-export default mongoose.models.Artwork || mongoose.model('Artwork', artworkSchema);
+export default mongoose.models.Artwork ||
+  mongoose.model("Artwork", artworkSchema);
