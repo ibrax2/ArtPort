@@ -1,0 +1,14 @@
+{
+  "name": "artport",
+  "version": "1.0.0",
+  "description": "ArtPort - The portal to all artists",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd frontend-next && npm run dev",
+    "install-all": "npm install && cd server && npm install && cd ../frontend-next && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

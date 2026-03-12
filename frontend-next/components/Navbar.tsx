@@ -1,13 +1,37 @@
 'use client'
 import Link from "next/link";
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import SearchBar from "./searchbar";
 
 export default function Navbar() {
+    const router = useRouter()
     const [isOpen, setIsOpen] = useState(false)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+    useEffect(() => {
+        // Check if user is logged in on mount
+        const token = localStorage.getItem('token')
+        setIsLoggedIn(!!token)
+    }, [])
 
     const handleSearch = (query: any, filter: any) => {
         console.log("Searching:", query, "Filter:", filter)
+    }
+
+    const handleLogout = () => {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        setIsLoggedIn(false)
+        setIsOpen(false)
+        router.push('/')
+    }
+
+    const toggleMenu = () => {
+        // Re-check login state each time menu opens
+        const token = localStorage.getItem('token')
+        setIsLoggedIn(!!token)
+        setIsOpen(!isOpen)
     }
 
     return (
@@ -71,7 +95,7 @@ export default function Navbar() {
 
                 {/* Profile menu */}
                 <div
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={toggleMenu}
                     style={{
                         width: '36px',
                         height: '36px',
@@ -93,61 +117,79 @@ export default function Navbar() {
                         minWidth: '120px',
                         border: '1px solid #cccccc'
                     }}>
-                        <Link
-                            href="/user_profile"
-                            onClick={() => setIsOpen(false)}
-                            style={{
-                                color: '#f29f41',
-                                fontWeight: 'bold',
-                                textDecoration: 'none',
-                                display: 'block',
-                                padding: '8px'
-                            }}
-                        >
-                            Profile
-                        </Link>
+                        {isLoggedIn ? (
+                            <>
+                                <Link
+                                    href="/user_profile"
+                                    onClick={() => setIsOpen(false)}
+                                    style={{
+                                        color: '#f29f41',
+                                        fontWeight: 'bold',
+                                        textDecoration: 'none',
+                                        display: 'block',
+                                        padding: '8px'
+                                    }}
+                                >
+                                    Profile
+                                </Link>
 
-                        <Link
-                            href="/user_profile"
-                            onClick={() => setIsOpen(false)}
-                            style={{
-                                color: '#f29f41',
-                                fontWeight: 'bold',
-                                textDecoration: 'none',
-                                display: 'block',
-                                padding: '8px'
-                            }}
-                        >
-                            My Works
-                        </Link>
+                                <Link
+                                    href="/user_profile"
+                                    onClick={() => setIsOpen(false)}
+                                    style={{
+                                        color: '#f29f41',
+                                        fontWeight: 'bold',
+                                        textDecoration: 'none',
+                                        display: 'block',
+                                        padding: '8px'
+                                    }}
+                                >
+                                    My Works
+                                </Link>
 
-                        <Link
-                            href=""
-                            onClick={() => setIsOpen(false)}
-                            style={{
-                                color: '#f29f41',
-                                fontWeight: 'bold',
-                                textDecoration: 'none',
-                                display: 'block',
-                                padding: '8px'
-                            }}
-                        >
-                            Settings
-                        </Link>
+                                <Link
+                                    href=""
+                                    onClick={() => setIsOpen(false)}
+                                    style={{
+                                        color: '#f29f41',
+                                        fontWeight: 'bold',
+                                        textDecoration: 'none',
+                                        display: 'block',
+                                        padding: '8px'
+                                    }}
+                                >
+                                    Settings
+                                </Link>
 
-                        <Link
-                            href="/login"
-                            onClick={() => setIsOpen(false)}
-                            style={{
-                                color: '#f29f41',
-                                fontWeight: 'bold',
-                                textDecoration: 'none',
-                                display: 'block',
-                                padding: '8px'
-                            }}
-                        >
-                            Log out
-                        </Link>
+                                <div
+                                    onClick={handleLogout}
+                                    style={{
+                                        color: '#f29f41',
+                                        fontWeight: 'bold',
+                                        textDecoration: 'none',
+                                        display: 'block',
+                                        padding: '8px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    Log out
+                                </div>
+                            </>
+                        ) : (
+                            <Link
+                                href="/login"
+                                onClick={() => setIsOpen(false)}
+                                style={{
+                                    color: '#f29f41',
+                                    fontWeight: 'bold',
+                                    textDecoration: 'none',
+                                    display: 'block',
+                                    padding: '8px'
+                                }}
+                            >
+                                Login
+                            </Link>
+                        )}
                     </div>
                 )}
             </div>
