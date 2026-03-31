@@ -1,0 +1,30 @@
+@reference "tailwindcss";
+
+.fieldset {
+  @apply m-0 p-0 min-w-0 border-0;
+}
+
+.legend {
+  @apply flex flex-wrap items-center gap-2 pb-2 w-full;
+  padding-inline-start: 0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.legendText {
+  @apply text-lg font-medium text-[#2a241c];
+}
+
+.required {
+  @apply text-[#8b4513];
+}
+
+.detail {
+  @apply text-sm text-[#3d3429] mb-3 rounded-lg px-3 py-2 max-w-prose;
+  background: rgba(243, 225, 207, 0.85);
+  border: 1px solid #c9b297;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.body {
+  @apply flex flex-col gap-2;
+}

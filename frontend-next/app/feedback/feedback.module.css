@@ -1,0 +1,6 @@
+@reference "tailwindcss";
+
+.main {
+  @apply min-h-[calc(100vh-80px)] py-10 px-4;
+  background: var(--background, #ffedd8);
+}

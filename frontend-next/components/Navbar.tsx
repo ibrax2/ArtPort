@@ -10,12 +10,11 @@ export default function Navbar() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
 
     useEffect(() => {
-        // Check if user is logged in on mount
         const token = localStorage.getItem('token')
         setIsLoggedIn(!!token)
     }, [])
 
-    const handleSearch = (query: any, filter: any) => {
+    const handleSearch = (query?: any, filter?: any) => {
         console.log("Searching:", query, "Filter:", filter)
     }
 
@@ -28,7 +27,6 @@ export default function Navbar() {
     }
 
     const toggleMenu = () => {
-        // Re-check login state each time menu opens
         const token = localStorage.getItem('token')
         setIsLoggedIn(!!token)
         setIsOpen(!isOpen)
@@ -66,7 +64,11 @@ export default function Navbar() {
                     width: '100%',
                     maxWidth: '500px'
                 }}>
-                    <SearchBar placeholder="Search artwork..." onSearch={handleSearch} />
+                    <SearchBar
+                        placeholder="Search artwork..."
+                        onSearch={handleSearch}
+                        onSelectResult={() => {}}
+                    />
                 </div>
             </div>
 
@@ -176,19 +178,34 @@ export default function Navbar() {
                                 </div>
                             </>
                         ) : (
-                            <Link
-                                href="/login"
-                                onClick={() => setIsOpen(false)}
-                                style={{
-                                    color: '#f29f41',
-                                    fontWeight: 'bold',
-                                    textDecoration: 'none',
-                                    display: 'block',
-                                    padding: '8px'
-                                }}
-                            >
-                                Login
-                            </Link>
+                            <>
+                                <Link
+                                    href="/user_profile"
+                                    onClick={() => setIsOpen(false)}
+                                    style={{
+                                        color: '#f29f41',
+                                        fontWeight: 'bold',
+                                        textDecoration: 'none',
+                                        display: 'block',
+                                        padding: '8px'
+                                    }}
+                                >
+                                    Profile
+                                </Link>
+                                <Link
+                                    href="/login"
+                                    onClick={() => setIsOpen(false)}
+                                    style={{
+                                        color: '#f29f41',
+                                        fontWeight: 'bold',
+                                        textDecoration: 'none',
+                                        display: 'block',
+                                        padding: '8px'
+                                    }}
+                                >
+                                    Login
+                                </Link>
+                            </>
                         )}
                     </div>
                 )}

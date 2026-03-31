@@ -1,0 +1,211 @@
+.entire_container {
+  width: 935px;
+  min-height: 1084px;
+  height: auto;
+  border-radius: 57px;
+  background: #d9d9d9;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.banner_container {
+  width: 100%;
+  height: 323px;
+  border-radius: 57px 57px 0 0;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #c3a179 0%, #d0bea9 100%);
+}
+
+.banner_container .banner_image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile_hidden_file_input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.edit_banner_btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 4;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+}
+
+.edit_banner_btn:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.edit_banner_btn:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+/* Pull avatar up so ~half sits on banner */
+.profile_header_row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 0 3.5rem 0 3rem;
+  margin-top: -100px;
+  position: relative;
+  z-index: 2;
+}
+
+.profile_picture_container {
+  flex-shrink: 0;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: #d9d9d9;
+  border: 1px solid #000;
+  overflow: hidden;
+  position: relative;
+}
+
+.profile_picture_container .profile_pfp_image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.edit_avatar_btn {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+}
+
+.edit_avatar_btn:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.profile_text_block {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 360px;
+  padding-top: 6.5rem;
+}
+
+.profile_username {
+  margin: 0;
+  color: #000;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.profile_user_bio {
+  margin: 0.5rem 0 0;
+  max-width: 359px;
+  min-height: 1.5em;
+  color: #000;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+}
+
+.profile_user_bio.muted {
+  opacity: 0.55;
+}
+
+.profile_stats_col {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-end;
+  text-align: right;
+  padding-top: 6.5rem;
+  margin-left: auto;
+}
+
+.stats_individual {
+  margin: 0;
+  color: #000;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+/* Gradient panel: folders + posts */
+.separation {
+  width: 746px;
+  max-width: calc(100% - 4rem);
+  margin: 1.75rem auto 2rem;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f4f4f4 0%, rgba(142, 142, 142, 0) 100%);
+  padding: 1.5rem 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  min-height: 120px;
+  box-sizing: border-box;
+}
+
+.folder_row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3rem;
+  width: 100%;
+}
+
+.profile-folder-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.profile-folder-label {
+  margin: 0;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #000;
+  text-align: center;
+}
+
+.separation .profile_posts_section {
+  width: 100%;
+}

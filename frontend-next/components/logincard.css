@@ -1,38 +1,50 @@
 @reference "tailwindcss";
 
-.loginContainer {
+.login-container {
   @apply flex flex-col gap-6 rounded-[57px] p-12 w-[1100px];
   background: #f3e1cf;
-  width: 500px; 
+  width: 500px;
 }
 
-.loginText {
+.login-text {
   @apply text-black text-[50px] font-normal not-italic leading-[normal] text-center;
   font-family: Arial, sans-serif;
 }
 
-.inputBox {
+.input-box {
   @apply w-full h-[50px] border border-black rounded-[10px] px-4;
   background: #c9b297;
 }
 
-.loginButton {
-  @apply w-[200px] h-[80px] rounded-[19px] shadow-[0_4px_4px_0_rgba(0,0,0,0.25)_inset] mt-4 cursor-pointer items-center justify-center mx-auto;
+.login-button {
+  @apply w-[200px] h-[80px] rounded-[19px] shadow-[0_4px_4px_0_rgba(0,0,0,0.25)_inset] mt-4 cursor-pointer items-center justify-center mx-auto flex;
   background: #9a846a;
   color: white;
 }
 
-.signupLink {
+.signup-link {
   @apply text-[#215A80] text-[25px] font-normal not-italic leading-[normal] mt-2 cursor-pointer items-center justify-center mx-auto;
   font-family: Arial, sans-serif;
 }
 
-.boxLabels {
+.box-labels {
   @apply text-black text-[30px] font-normal not-italic leading-[normal] w-[442px];
   font-family: Arial, sans-serif;
 }
 
-.loginButtonLabel {
+.login-button-label {
   @apply text-white text-[35px] font-normal not-italic leading-[normal];
   font-family: Arial, sans-serif;
+}
+
+.login-error {
+  @apply text-red-600 text-center text-lg;
+}
+
+.login-page-shell {
+  @apply w-full flex justify-center;
+}
+
+.login-page-main {
+  @apply min-h-screen flex items-center justify-center;
 }

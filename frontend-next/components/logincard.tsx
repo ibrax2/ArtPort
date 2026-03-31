@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
-import styles from "./logincard.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+type FormOnSubmit = NonNullable<ComponentProps<"form">["onSubmit"]>;
 
 const LoginCard: React.FC = () => {
   const router = useRouter();
@@ -34,7 +34,6 @@ const LoginCard: React.FC = () => {
         throw new Error(data.message || "Login failed");
       }
 
-      // Store token and user data in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify({
         _id: data._id,
@@ -69,7 +68,6 @@ const LoginCard: React.FC = () => {
         throw new Error(data.message || "Registration failed");
       }
 
-      // Store token and user data in localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify({
         _id: data._id,
@@ -85,7 +83,7 @@ const LoginCard: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit: FormOnSubmit = (e) => {
     e.preventDefault();
     if (isSignup) {
       handleSignup();
@@ -101,8 +99,8 @@ const LoginCard: React.FC = () => {
 
   return (
     <div className="w-full flex justify-center">
-      <form onSubmit={handleSubmit} className={styles.loginContainer}>
-        <h1 className={styles.loginText}>{isSignup ? "Sign Up" : "Login"}</h1>
+      <form onSubmit={handleSubmit} className="login-container">
+        <h1 className="login-text">{isSignup ? "Sign Up" : "Login"}</h1>
         
         {error && (
           <div className="text-red-600 text-center text-lg">{error}</div>
@@ -110,11 +108,11 @@ const LoginCard: React.FC = () => {
 
         {isSignup && (
           <>
-            <label className={styles.boxLabels} htmlFor="username">Username</label>
+            <label className="box-labels" htmlFor="username">Username</label>
             <input
               type="text"
               id="username"
-              className={styles.inputBox}
+              className="input-box"
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -123,22 +121,22 @@ const LoginCard: React.FC = () => {
           </>
         )}
 
-        <label className={styles.boxLabels} htmlFor="email">Email</label>
+        <label className="box-labels" htmlFor="email">Email</label>
         <input
           type="email"
           id="email"
-          className={styles.inputBox}
+          className="input-box"
           placeholder="Enter your email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
 
-        <label className={styles.boxLabels} htmlFor="password">Password</label>
+        <label className="box-labels" htmlFor="password">Password</label>
         <input
           type="password"
           id="password"
-          className={styles.inputBox}
+          className="input-box"
           placeholder="Enter your password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -147,15 +145,15 @@ const LoginCard: React.FC = () => {
 
         <button 
           type="submit" 
-          className={styles.loginButton}
+          className="login-button"
           disabled={loading}
         >
-          <span className={styles.loginButtonLabel}>
+          <span className="login-button-label">
             {loading ? "..." : (isSignup ? "Sign Up" : "Login")}
           </span>
         </button>
 
-        <div onClick={toggleMode} className={styles.signupLink}>
+        <div onClick={toggleMode} className="signup-link">
           {isSignup ? "Already have an account? Login" : "Sign Up"}
         </div>
       </form>

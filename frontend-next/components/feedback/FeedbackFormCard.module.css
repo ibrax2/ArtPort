@@ -1,0 +1,69 @@
+@reference "tailwindcss";
+
+.card {
+  @apply w-full max-w-3xl mx-auto rounded-[40px] px-8 py-10 shadow-lg;
+  background: #f3e1cf;
+  border: 1px solid #c9b297;
+}
+
+.header {
+  @apply mb-8;
+}
+
+.title {
+  @apply text-3xl font-semibold text-[#2a241c] m-0 mb-2;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.description {
+  @apply text-base text-[#5a4d3f] m-0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.form {
+  @apply flex flex-col gap-0;
+}
+
+.questions {
+  @apply flex flex-col gap-8;
+}
+
+.actions {
+  @apply flex justify-end mt-10 pt-4 border-t border-[#c9b297];
+}
+
+.primaryBtn {
+  @apply px-6 py-3 rounded-xl text-white font-medium cursor-pointer border-0 text-base;
+  background: #9a846a;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.primaryBtn:hover {
+  background: #8a755e;
+}
+
+.primaryBtn:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.thanks {
+  @apply flex flex-col gap-4 items-start;
+}
+
+.thanksText {
+  @apply text-lg text-[#2a241c] m-0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.secondaryBtn {
+  @apply px-4 py-2 rounded-lg cursor-pointer border text-sm font-medium;
+  background: transparent;
+  border-color: #6b5b4a;
+  color: #2a241c;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.secondaryBtn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}

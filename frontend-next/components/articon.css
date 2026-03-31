@@ -1,0 +1,38 @@
+@reference "tailwindcss";
+
+.articon-container {
+  @apply relative w-[300px] h-[300px] rounded-[31px] overflow-hidden;
+}
+
+.articon-image {
+  @apply w-full h-full object-cover transition-transform duration-300;
+}
+
+.articon-container:hover .articon-image {
+  @apply scale-105;
+}
+
+.articon-overlay {
+  @apply absolute inset-0 rounded-[31px] opacity-0 transition duration-300 flex flex-col justify-between p-3;
+  background: linear-gradient(180deg, #fff2e2 0%, #8b6334 100%);
+}
+
+.articon-container:hover .articon-overlay {
+  @apply opacity-100;
+}
+
+.articon-user {
+  @apply flex items-center gap-2;
+}
+
+.articon-avatar {
+  @apply w-[63px] h-[63px] rounded-full object-cover border border-black/10;
+}
+
+.articon-username {
+  @apply text-black text-[16px] font-extralight;
+}
+
+.articon-title {
+  @apply text-black text-[36px] font-normal leading-none truncate;
+}

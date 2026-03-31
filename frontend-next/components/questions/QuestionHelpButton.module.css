@@ -1,0 +1,33 @@
+@reference "tailwindcss";
+
+.helpButton {
+  @apply inline-flex shrink-0 items-center justify-center rounded-full border cursor-pointer;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border-color: #6b5b4a;
+  background: #f3e1cf;
+  color: #3d3429;
+  line-height: 1;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.helpButton:hover {
+  background: #e8d4bf;
+  border-color: #5a4d3f;
+}
+
+.helpButton:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.helpButton[aria-expanded="true"] {
+  background: #d4c4b0;
+  border-color: #5a4d3f;
+}
+
+.mark {
+  @apply text-sm font-semibold leading-none;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
