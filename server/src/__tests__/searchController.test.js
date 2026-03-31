@@ -1,13 +1,16 @@
-import { jest } from '@jest/globals';
-import { searchUsers, searchArtworks } from '../controllers/searchController.js';
-import User from '../models/User.js';
-import Artwork from '../models/Artwork.js';
+import { jest } from "@jest/globals";
+import {
+  searchUsers,
+  searchArtworks,
+} from "../controllers/searchController.js";
+import User from "../models/User.js";
+import Artwork from "../models/Artwork.js";
 
 // Mock the models
-jest.mock('../models/User.js');
-jest.mock('../models/Artwork.js');
+jest.mock("../models/User.js");
+jest.mock("../models/Artwork.js");
 
-describe('Search Controller', () => {
+describe("Search Controller", () => {
   let req, res;
 
   beforeEach(() => {
@@ -29,49 +32,49 @@ describe('Search Controller', () => {
   //=====================================================
   //                Tests for searchUsers
   //=====================================================
-  describe('searchUsers', () => {
-    it('should return error when query is empty', async () => {
-      req.query = { query: '' };
+  describe("searchUsers", () => {
+    it("should return error when query is empty", async () => {
+      req.query = { query: "" };
 
       await searchUsers(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Search query is required',
+        message: "Search query is required",
       });
     });
 
-    it('should return error when query is not provided', async () => {
+    it("should return error when query is not provided", async () => {
       req.query = { query: undefined };
 
       await searchUsers(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Search query is required',
+        message: "Search query is required",
       });
     });
 
-    it('should return search results for valid query', async () => {
+    it("should return search results for valid query", async () => {
       const mockUsers = [
         {
-          _id: '507f1f77bcf86cd799439011',
-          username: 'john_doe',
-          profilePictureUrl: 'https://example.com/pic.jpg',
-          bio: 'Artist',
+          _id: "507f1f77bcf86cd799439011",
+          username: "john_doe",
+          profilePictureUrl: "https://example.com/pic.jpg",
+          bio: "Artist",
           score: 5.8,
         },
         {
-          _id: '507f1f77bcf86cd799439012',
-          username: 'john_smith',
-          profilePictureUrl: 'https://example.com/pic2.jpg',
-          bio: 'Designer',
+          _id: "507f1f77bcf86cd799439012",
+          username: "john_smith",
+          profilePictureUrl: "https://example.com/pic2.jpg",
+          bio: "Designer",
           score: 4.2,
         },
       ];
 
       User.aggregate = jest.fn().mockResolvedValue(mockUsers);
-      req.query = { query: 'john' };
+      req.query = { query: "john" };
 
       await searchUsers(req, res);
 
@@ -82,9 +85,9 @@ describe('Search Controller', () => {
       });
     });
 
-    it('should return empty results when no users match', async () => {
+    it("should return empty results when no users match", async () => {
       User.aggregate = jest.fn().mockResolvedValue([]);
-      req.query = { query: 'nonexistent' };
+      req.query = { query: "nonexistent" };
 
       await searchUsers(req, res);
 
@@ -94,22 +97,22 @@ describe('Search Controller', () => {
       });
     });
 
-    it('should handle database errors gracefully', async () => {
-      const error = new Error('Database connection failed');
+    it("should handle database errors gracefully", async () => {
+      const error = new Error("Database connection failed");
       User.aggregate = jest.fn().mockRejectedValue(error);
-      req.query = { query: 'john' };
+      req.query = { query: "john" };
 
       await searchUsers(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Database connection failed',
+        message: "Database connection failed",
       });
     });
 
-    it('should apply fuzzy matching in aggregation pipeline', async () => {
+    it("should apply fuzzy matching in aggregation pipeline", async () => {
       User.aggregate = jest.fn().mockResolvedValue([]);
-      req.query = { query: 'johnn' };
+      req.query = { query: "johnn" };
 
       await searchUsers(req, res);
 
@@ -122,17 +125,17 @@ describe('Search Controller', () => {
       });
     });
 
-    it('should limit results to 20', async () => {
+    it("should limit results to 20", async () => {
       const mockUsers = Array(20).fill({
-        _id: '507f1f77bcf86cd799439011',
-        username: 'user',
-        profilePictureUrl: '',
-        bio: '',
+        _id: "507f1f77bcf86cd799439011",
+        username: "user",
+        profilePictureUrl: "",
+        bio: "",
         score: 5.8,
       });
 
       User.aggregate = jest.fn().mockResolvedValue(mockUsers);
-      req.query = { query: 'user' };
+      req.query = { query: "user" };
 
       await searchUsers(req, res);
 
@@ -146,50 +149,50 @@ describe('Search Controller', () => {
   //=====================================================
   //                Tests for searchArtworks
   //=====================================================
-  describe('searchArtworks', () => {
-    it('should return error when query is empty', async () => {
-      req.query = { query: '  ' };
+  describe("searchArtworks", () => {
+    it("should return error when query is empty", async () => {
+      req.query = { query: "  " };
 
       await searchArtworks(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Search query is required',
+        message: "Search query is required",
       });
     });
 
-    it('should return error when query is not provided', async () => {
+    it("should return error when query is not provided", async () => {
       req.query = { query: null };
 
       await searchArtworks(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Search query is required',
+        message: "Search query is required",
       });
     });
 
-    it('should return search results with user details', async () => {
+    it("should return search results with user details", async () => {
       const mockArtworks = [
         {
-          _id: '507f1f77bcf86cd799439001',
-          title: 'Mountain Landscape',
-          description: 'A beautiful mountain landscape',
-          filePath: 's3://bucket/image.jpg',
-          thumbnailPath: 's3://bucket/thumb.jpg',
-          uploadDate: new Date('2024-03-30'),
+          _id: "507f1f77bcf86cd799439001",
+          title: "Mountain Landscape",
+          description: "A beautiful mountain landscape",
+          filePath: "s3://bucket/image.jpg",
+          thumbnailPath: "s3://bucket/thumb.jpg",
+          uploadDate: new Date("2024-03-30"),
           isPublic: true,
-          userId: '507f1f77bcf86cd799439011',
+          userId: "507f1f77bcf86cd799439011",
           userDetails: {
-            username: 'artist_name',
-            profilePictureUrl: 'https://example.com/pic.jpg',
+            username: "artist_name",
+            profilePictureUrl: "https://example.com/pic.jpg",
           },
           score: 7.2,
         },
       ];
 
       Artwork.aggregate = jest.fn().mockResolvedValue(mockArtworks);
-      req.query = { query: 'landscape' };
+      req.query = { query: "landscape" };
 
       await searchArtworks(req, res);
 
@@ -200,9 +203,9 @@ describe('Search Controller', () => {
       });
     });
 
-    it('should only return public artworks', async () => {
+    it("should only return public artworks", async () => {
       Artwork.aggregate = jest.fn().mockResolvedValue([]);
-      req.query = { query: 'art' };
+      req.query = { query: "art" };
 
       await searchArtworks(req, res);
 
@@ -213,9 +216,9 @@ describe('Search Controller', () => {
       expect(matchStage.$match.isPublic).toBe(true);
     });
 
-    it('should boost title matches', async () => {
+    it("should boost title matches", async () => {
       Artwork.aggregate = jest.fn().mockResolvedValue([]);
-      req.query = { query: 'portrait' };
+      req.query = { query: "portrait" };
 
       await searchArtworks(req, res);
 
@@ -227,9 +230,9 @@ describe('Search Controller', () => {
       expect(titleSearch.text.score.boost.value).toBe(2);
     });
 
-    it('should search both title and description', async () => {
+    it("should search both title and description", async () => {
       Artwork.aggregate = jest.fn().mockResolvedValue([]);
-      req.query = { query: 'test' };
+      req.query = { query: "test" };
 
       await searchArtworks(req, res);
 
@@ -238,13 +241,13 @@ describe('Search Controller', () => {
 
       const shouldClauses = searchStage.compound.should;
       expect(shouldClauses.length).toBe(2);
-      expect(shouldClauses[0].text.path).toBe('title');
-      expect(shouldClauses[1].text.path).toBe('description');
+      expect(shouldClauses[0].text.path).toBe("title");
+      expect(shouldClauses[1].text.path).toBe("description");
     });
 
-    it('should return empty results when no artworks match', async () => {
+    it("should return empty results when no artworks match", async () => {
       Artwork.aggregate = jest.fn().mockResolvedValue([]);
-      req.query = { query: 'nonexistent_art' };
+      req.query = { query: "nonexistent_art" };
 
       await searchArtworks(req, res);
 
@@ -254,38 +257,38 @@ describe('Search Controller', () => {
       });
     });
 
-    it('should handle database errors gracefully', async () => {
-      const error = new Error('Search service unavailable');
+    it("should handle database errors gracefully", async () => {
+      const error = new Error("Search service unavailable");
       Artwork.aggregate = jest.fn().mockRejectedValue(error);
-      req.query = { query: 'landscape' };
+      req.query = { query: "landscape" };
 
       await searchArtworks(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
-        message: 'Search service unavailable',
+        message: "Search service unavailable",
       });
     });
 
-    it('should limit results to 20', async () => {
+    it("should limit results to 20", async () => {
       const mockArtworks = Array(20).fill({
-        _id: '507f1f77bcf86cd799439001',
-        title: 'Artwork',
-        description: 'Description',
-        filePath: 's3://bucket/image.jpg',
-        thumbnailPath: 's3://bucket/thumb.jpg',
+        _id: "507f1f77bcf86cd799439001",
+        title: "Artwork",
+        description: "Description",
+        filePath: "s3://bucket/image.jpg",
+        thumbnailPath: "s3://bucket/thumb.jpg",
         uploadDate: new Date(),
         isPublic: true,
-        userId: '507f1f77bcf86cd799439011',
+        userId: "507f1f77bcf86cd799439011",
         userDetails: {
-          username: 'artist',
-          profilePictureUrl: '',
+          username: "artist",
+          profilePictureUrl: "",
         },
         score: 5.0,
       });
 
       Artwork.aggregate = jest.fn().mockResolvedValue(mockArtworks);
-      req.query = { query: 'art' };
+      req.query = { query: "art" };
 
       await searchArtworks(req, res);
 
