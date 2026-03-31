@@ -1,0 +1,18 @@
+@reference "tailwindcss";
+
+.row {
+  @apply flex items-start gap-3 cursor-pointer select-none;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.input {
+  @apply mt-1 shrink-0 w-4 h-4 cursor-pointer accent-[#6b5b4a];
+}
+
+.labelText {
+  @apply text-base text-[#2a241c] leading-snug;
+}
+
+.row:has(.input:disabled) {
+  @apply opacity-60 cursor-not-allowed;
+}

@@ -1,0 +1,71 @@
+@reference "tailwindcss";
+
+.backdrop {
+  @apply fixed inset-0 z-[100] flex items-center justify-center p-4;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.dialog {
+  @apply w-full max-w-lg rounded-2xl shadow-xl overflow-hidden flex flex-col gap-3;
+  max-height: min(90vh, 640px);
+  background: #f3e1cf;
+  border: 1px solid #c9b297;
+}
+
+.title {
+  @apply text-xl font-semibold text-[#2a241c] m-0 px-4 pt-4;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.hint {
+  @apply text-sm text-[#5a4d3f] m-0 px-4;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.cropWrap {
+  @apply relative w-full bg-[#1a1510];
+  height: min(48vh, 320px);
+}
+
+.zoomRow {
+  @apply flex items-center gap-3 px-4;
+}
+
+.zoomLabel {
+  @apply text-sm text-[#2a241c] shrink-0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.zoomRange {
+  @apply flex-1 min-w-0 accent-[#6b5b4a];
+}
+
+.actions {
+  @apply flex justify-end gap-2 px-4 pb-4 pt-1;
+}
+
+.btnPrimary {
+  @apply px-4 py-2 rounded-lg text-white cursor-pointer border-0 text-sm font-medium;
+  background: #9a846a;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: #8a755e;
+}
+
+.btnPrimary:disabled {
+  @apply opacity-60 cursor-not-allowed;
+}
+
+.btnSecondary {
+  @apply px-4 py-2 rounded-lg cursor-pointer border text-sm font-medium;
+  background: transparent;
+  border-color: #6b5b4a;
+  color: #2a241c;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.btnSecondary:hover {
+  background: rgba(0, 0, 0, 0.06);
+}

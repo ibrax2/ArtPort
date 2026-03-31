@@ -1,20 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-.uploadContainer {
-  width: 895px;          
+.upload-container {
+  width: 895px;
   border-radius: 57px;
   background-color: transparent;
   padding: 1.5rem;
-  
-  margin: 0 auto;       
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 2rem;
 }
 
-.uploadFileBox {
+.upload-file-box {
   width: 100%;
   height: 856px;
   border: 1px solid black;
@@ -22,9 +17,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
 }
 
-.uploadIcon {
+.upload-icon {
   width: 16rem;
   height: 20rem;
   padding: 1rem;
@@ -33,43 +31,42 @@
   align-items: center;
 }
 
-.titleBox,
-.descriptionBox {
-  width: 100%;             
+.title-box,
+.description-box {
+  width: 100%;
   border: none;
   background-color: transparent;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   padding: 0;
-
   align-items: flex-start;
 }
 
-.titleLabel,
-.descriptionLabel {
+.title-label,
+.description-label {
   font-family: Inter, sans-serif;
   font-size: 2rem;
   font-weight: 400;
-  margin-left: 0;         
+  margin-left: 0;
 }
 
-.textInput,
-.textareaInput {
-  width: 100%;             
+.text-input,
+.textarea-input {
+  width: 100%;
   border: 1px solid black;
   border-radius: 0.25rem;
   padding: 0.25rem 0.5rem;
 }
 
-.buttonRow {
+.button-row {
   display: flex;
   gap: 10rem;
   justify-content: center;
   margin-top: 1rem;
 }
 
-.uploadButton {
+.upload-button {
   background-color: #2cac2e;
   color: black;
   font-size: 1.5rem;
@@ -83,7 +80,7 @@
   cursor: pointer;
 }
 
-.cancelButton {
+.cancel-button {
   background-color: #a52020;
   color: white;
   font-size: 1.5rem;
@@ -97,34 +94,67 @@
   cursor: pointer;
 }
 
-.cancelButton:active {
+.cancel-button:active {
   background-color: #640f0f;
 }
 
-.uploadButton:active {
+.upload-button:active {
   background-color: #58b95a;
 }
 
-.hiddenInput {
+.hidden-input {
   display: none;
 }
 
-.previewImage {
+.preview-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.mainTitle{
-    font-size: 4rem;
-}
-
-.uploadFileBox {
-  cursor: pointer;
-  overflow: hidden; 
-  position: relative;
+.upload-below-box {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  gap: 0.75rem;
+  width: 100%;
 }
 
+.reselect-photo-button {
+  background-color: #9a846a;
+  color: #fff;
+  font-size: 1.125rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.reselect-photo-button:hover {
+  background-color: #8a755e;
+}
+
+.reselect-photo-button:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.upload-file-hint {
+  margin: 0;
+  max-width: 42rem;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #3d3429;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.main-title {
+  font-size: 4rem;
+}
+
+.upload-route {
+  padding: 1rem;
+}

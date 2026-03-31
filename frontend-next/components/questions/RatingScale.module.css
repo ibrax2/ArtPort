@@ -1,0 +1,49 @@
+@reference "tailwindcss";
+
+.root {
+  @apply flex flex-wrap items-start gap-3 gap-y-2;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.cell {
+  @apply flex flex-col items-center gap-1 min-w-[2.5rem];
+}
+
+.input {
+  @apply sr-only;
+}
+
+.numberLabel {
+  @apply flex items-center justify-center min-w-[2.25rem] min-h-[2.25rem] rounded-lg border text-base font-medium cursor-pointer select-none;
+  border-color: #6b5b4a;
+  background: #f3e1cf;
+  color: #2a241c;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input:focus-visible + .numberLabel {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.input:checked + .numberLabel {
+  background: #9a846a;
+  color: #fff;
+  border-color: #5a4d3f;
+}
+
+.cell:hover .numberLabel {
+  background: #e8d4bf;
+}
+
+.input:checked + .numberLabel:hover {
+  background: #8a755e;
+}
+
+.input:disabled + .numberLabel {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.stepCaption {
+  @apply block text-xs text-center text-[#5a4d3f] max-w-[5rem] leading-tight min-h-[2.25em] w-full;
+}

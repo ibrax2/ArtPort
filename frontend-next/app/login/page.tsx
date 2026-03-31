@@ -2,7 +2,7 @@ import LoginCard from "../../components/logincard";
 
 export default function Home() {
   return (
-  <main className="min-h-screen flex items-center justify-center">
+  <main className="login-page-main">
     <LoginCard />
   </main>
   );
