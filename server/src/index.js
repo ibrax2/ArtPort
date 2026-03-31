@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import artworkRoutes from "./routes/artworkRoutes.js";
+import feedbackFormRoutes from "./routes/feedbackFormRoutes.js";
+import responseRoutes from "./routes/responseRoutes.js";
 
 dotenv.config();
 
@@ -23,6 +25,8 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/artworks", artworkRoutes);
+app.use("/api/feedbackForm", feedbackFormRoutes);
+app.use("/api/response", responseRoutes);
 
 app.get("/", (req, res) => {
   res.send("ArtPort API is running!");

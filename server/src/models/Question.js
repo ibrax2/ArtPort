@@ -31,6 +31,10 @@ const questionSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    allowMultipleSelections: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
