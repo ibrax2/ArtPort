@@ -1,0 +1,188 @@
+.page {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  background: #ffffff;
+  min-height: 1024px;
+}
+
+/* Main frame: image + sidebar side by side */
+.mainFrame {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  padding-left: 224px;
+  padding-top: 24px;
+  box-sizing: border-box;
+}
+
+/* Image container */
+.imageContainer {
+  width: 750px;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.artworkImage {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 350px;
+  flex-shrink: 0;
+  margin-left: 58px;
+  align-self: flex-start;
+}
+
+.artistInfo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #e8e8e8;
+  width: 300px;
+  height: 60px;
+  box-sizing: border-box;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatarPlaceholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #a2a2a2;
+  flex-shrink: 0;
+}
+
+.username {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #000000;
+}
+
+/* Caption frame */
+.captionFrame {
+  width: 750px;
+  margin-left: 224px;
+  margin-top: 24px;
+  padding: 32px 16px;
+  background: #ccc8c8;
+  box-sizing: border-box;
+  min-height: calc(100vh - 900px);
+}
+
+.artworkTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  color: #000000;
+  margin: 0 0 12px 0;
+  line-height: 29px;
+}
+
+.description {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #000000;
+  margin: 0 0 28px 0;
+  line-height: 17px;
+}
+
+/* Feedback button */
+.feedbackButton {
+  width: 150px;
+  height: 36px;
+  background: #f29f41;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.feedbackButton:hover {
+  background: #e08e30;
+}
+
+/* Feedback form */
+.feedbackForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.feedbackInput {
+  width: 100%;
+  border: 1px solid #aaa;
+  border-radius: 6px;
+  padding: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.feedbackActions {
+  display: flex;
+  gap: 12px;
+}
+
+.submitButton {
+  width: 100px;
+  height: 36px;
+  background: #f29f41;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.submitButton:hover {
+  background: #e08e30;
+}
+
+.cancelButton {
+  width: 100px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid #aaa;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #000;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.cancelButton:hover {
+  background: #eee;
+}
+
+.successMessage {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #2cac2e;
+  font-weight: 600;
+  margin-top: 8px;
+}
