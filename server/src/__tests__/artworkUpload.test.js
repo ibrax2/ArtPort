@@ -2,21 +2,20 @@ import { jest } from "@jest/globals";
 
 const mockArtworkSave = jest.fn();
 const mockArtworkConstructor = jest.fn(() => ({
-  save: mockArtworkSave
+  save: mockArtworkSave,
 }));
 
 // Mock the dependencies correctly for ESM
 jest.unstable_mockModule("../models/Artwork.js", () => ({
-  default: mockArtworkConstructor
+  default: mockArtworkConstructor,
 }));
 
 const mockUploadImageToS3 = jest.fn();
 jest.unstable_mockModule("../controllers/imageUploadController.js", () => ({
-  uploadImageToS3: mockUploadImageToS3
+  uploadImageToS3: mockUploadImageToS3,
 }));
 
 const { createArtwork } = await import("../controllers/artworkController.js");
-
 
 describe("Artwork Controller - Upload functionality", () => {
   let req, res;
@@ -26,7 +25,7 @@ describe("Artwork Controller - Upload functionality", () => {
 
     req = {
       body: {},
-      file: undefined,
+      files: undefined,
     };
 
     res = {
@@ -42,7 +41,7 @@ describe("Artwork Controller - Upload functionality", () => {
         description: "Test description",
         userId: "123456789",
       };
-      
+
       // No req.file or req.body.filePath
       await createArtwork(req, res);
 
@@ -51,11 +50,12 @@ describe("Artwork Controller - Upload functionality", () => {
     });
 
     it("should process an uploaded file, call S3, and save to DB", async () => {
-      const mockS3Url = "https://bucket.s3.region.amazonaws.com/artworks/123-abc.jpg";
+      const mockS3Url =
+        "https://bucket.s3.region.amazonaws.com/artworks/123-abc.jpg";
       const mockFile = {
         originalname: "test-image.jpg",
         mimetype: "image/jpeg",
-        buffer: Buffer.from("fake-image-data")
+        buffer: Buffer.from("fake-image-data"),
       };
 
       // Mock the imageUploadController response
@@ -66,7 +66,9 @@ describe("Artwork Controller - Upload functionality", () => {
         description: "A nice painting",
         userId: "507f1f77bcf86cd799439011",
       };
-      req.file = mockFile;
+      req.files = {
+        image: [mockFile],
+      };
 
       // Mock Artwork save behavior
       const mockSavedArtwork = {
@@ -74,7 +76,7 @@ describe("Artwork Controller - Upload functionality", () => {
         title: "Beautiful Scenery",
         description: "A nice painting",
         filePath: mockS3Url,
-        userId: "507f1f77bcf86cd799439011"
+        userId: "507f1f77bcf86cd799439011",
       };
 
       // Mock the constructor and save method of the Artwork model
@@ -95,7 +97,7 @@ describe("Artwork Controller - Upload functionality", () => {
       const mockFile = {
         originalname: "test-err.png",
         mimetype: "image/png",
-        buffer: Buffer.from("err-img")
+        buffer: Buffer.from("err-img"),
       };
 
       mockUploadImageToS3.mockRejectedValue(mockError);
@@ -104,7 +106,9 @@ describe("Artwork Controller - Upload functionality", () => {
         title: "Error Art",
         userId: "507f1f77bcf86cd799439011",
       };
-      req.file = mockFile;
+      req.files = {
+        image: [mockFile],
+      };
 
       await createArtwork(req, res);
 

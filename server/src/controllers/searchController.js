@@ -1,5 +1,6 @@
-import User from '../models/User.js';
-import Artwork from '../models/Artwork.js';
+import User from "../models/User.js";
+import Artwork from "../models/Artwork.js";
+import { withMediaDeliveryUrls } from "../utils/mediaDelivery.js";
 
 /**
  * @desc    Search users by username
@@ -11,16 +12,16 @@ export const searchUsers = async (req, res) => {
     const { query } = req.query;
 
     if (!query || query.trim().length === 0) {
-      return res.status(400).json({ message: 'Search query is required' });
+      return res.status(400).json({ message: "Search query is required" });
     }
 
     const users = await User.aggregate([
       {
         $search: {
-          index: 'username_search',
+          index: "username_search",
           text: {
             query: query,
-            path: 'username',
+            path: "username",
             fuzzy: {
               maxEdits: 2,
               prefixLength: 0,
@@ -34,7 +35,7 @@ export const searchUsers = async (req, res) => {
           username: 1,
           profilePictureUrl: 1,
           bio: 1,
-          score: { $meta: 'searchScore' },
+          score: { $meta: "searchScore" },
         },
       },
       {
@@ -66,26 +67,26 @@ export const searchArtworks = async (req, res) => {
     const { query } = req.query;
 
     if (!query || query.trim().length === 0) {
-      return res.status(400).json({ message: 'Search query is required' });
+      return res.status(400).json({ message: "Search query is required" });
     }
 
     const artworks = await Artwork.aggregate([
       {
         $search: {
-          index: 'artwork_search',
+          index: "artwork_search",
           compound: {
             should: [
               {
                 text: {
                   query: query,
-                  path: 'title',
+                  path: "title",
                   score: { boost: { value: 2 } },
                 },
               },
               {
                 text: {
                   query: query,
-                  path: 'description',
+                  path: "description",
                 },
               },
             ],
@@ -99,15 +100,15 @@ export const searchArtworks = async (req, res) => {
       },
       {
         $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'userDetails',
+          from: "users",
+          localField: "userId",
+          foreignField: "_id",
+          as: "userDetails",
         },
       },
       {
         $unwind: {
-          path: '$userDetails',
+          path: "$userDetails",
           preserveNullAndEmptyArrays: true,
         },
       },
@@ -127,7 +128,7 @@ export const searchArtworks = async (req, res) => {
             username: 1,
             profilePictureUrl: 1,
           },
-          score: { $meta: 'searchScore' },
+          score: { $meta: "searchScore" },
         },
       },
       {
@@ -140,9 +141,13 @@ export const searchArtworks = async (req, res) => {
       },
     ]);
 
+    const deliveredArtworks = artworks.map((artwork) =>
+      withMediaDeliveryUrls(artwork),
+    );
+
     res.json({
-      results: artworks,
-      count: artworks.length,
+      results: deliveredArtworks,
+      count: deliveredArtworks.length,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

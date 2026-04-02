@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    bannerPictureUrl: {
+        type: String,
+        default: ''
+    },
     createdAt: {
         type: Date,
         default: Date.now

@@ -32,7 +32,6 @@ export const uploadImageToS3 = async (file, folder) => {
             Key: fileName,
             Body: file.buffer,
             ContentType: file.mimetype,
-            // ACL: 'public-read' // Uncomment if you want to make the object publicly readable explicitly via ACLs
         });
 
         await s3.send(command);

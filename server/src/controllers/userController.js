@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { uploadImageToS3 } from "./imageUploadController.js";
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -38,10 +39,16 @@ export const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
+    let profilePictureUrl = "";
+    if (req.file) {
+      profilePictureUrl = await uploadImageToS3(req.file, "users");
+    }
+
     const user = await User.create({
       username,
       email,
       passwordHash,
+      profilePictureUrl,
     });
 
     if (user) {
@@ -106,5 +113,53 @@ export const getUserProfile = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update user profile
+// @route   PATCH /api/users/:id
+// @access  Public
+export const updateUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (req.body.username) user.username = req.body.username;
+    if (req.body.email) user.email = req.body.email;
+    if (req.body.bio) user.bio = req.body.bio;
+    if (req.body.bannerPictureUrl)
+      user.bannerPictureUrl = req.body.bannerPictureUrl;
+
+    const profileFile = req.files?.profilePicture?.[0] || req.file;
+    const bannerFile = req.files?.bannerPicture?.[0];
+
+    if (profileFile) {
+      const profilePictureUrl = await uploadImageToS3(profileFile, "users");
+      user.profilePictureUrl = profilePictureUrl;
+    }
+
+    if (bannerFile) {
+      const bannerPictureUrl = await uploadImageToS3(
+        bannerFile,
+        "users/banners",
+      );
+      user.bannerPictureUrl = bannerPictureUrl;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      username: updatedUser.username,
+      email: updatedUser.email,
+      bio: updatedUser.bio,
+      profilePictureUrl: updatedUser.profilePictureUrl,
+      bannerPictureUrl: updatedUser.bannerPictureUrl,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
