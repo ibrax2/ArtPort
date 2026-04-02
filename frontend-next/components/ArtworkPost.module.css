@@ -3,11 +3,7 @@
   max-width: 1440px;
   margin: 0 auto;
   background: #ffffff;
-  min-height: 1024px; /* ← back to fixed value */
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 24px;
-  box-sizing: border-box;
+  min-height: 1024px;
 }
 
 /* Main frame: image + sidebar side by side */
@@ -18,8 +14,6 @@
   padding-left: 224px;
   padding-top: 24px;
   box-sizing: border-box;
-  flex: 1; 
-  align-items: stretch; 
 }
 
 /* Image container */
@@ -78,20 +72,15 @@
   color: #000000;
 }
 
-.leftColumn {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
+/* Caption frame */
 .captionFrame {
   width: 750px;
-  /* remove margin-left: 224px */
+  margin-left: 224px;
   margin-top: 24px;
   padding: 32px 16px;
   background: #ccc8c8;
   box-sizing: border-box;
-  flex: 1;
+  min-height: calc(100vh - 900px);
 }
 
 .artworkTitle {

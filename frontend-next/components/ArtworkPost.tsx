@@ -22,16 +22,9 @@ export default function ArtworkPost({
     <div className={styles.page}>
       {/* Main area: image + sidebar */}
       <div className={styles.mainFrame}>
-        {/* Left Column */}
-        <div className={styles.leftColumn}>
-          <div className={styles.imageContainer}>
-            <img src={imageUrl} alt={title} className={styles.artworkImage} />
-          </div>
-          <div className={styles.captionFrame}>
-            <h1 className={styles.artworkTitle}>{title}</h1>
-            <p className={styles.description}>{description}</p>
-            <button className={styles.feedbackButton}>Leave Feedback</button>
-          </div>
+        {/* Image Container */}
+        <div className={styles.imageContainer}>
+          <img src={imageUrl} alt={title} className={styles.artworkImage} />
         </div>
 
         {/* Sidebar */}
@@ -49,6 +42,18 @@ export default function ArtworkPost({
             <span className={styles.username}>{artistName}</span>
           </div>
         </div>
+      </div>
+
+      {/* Caption Frame */}
+      <div className={styles.captionFrame}>
+        <h1 className={styles.artworkTitle}>{title}</h1>
+        <p className={styles.description}>{description}</p>
+
+        {/* Feedback Button */}
+        <button className={styles.feedbackButton}>
+          Leave Feedback
+        </button>
+
       </div>
     </div>
   );
