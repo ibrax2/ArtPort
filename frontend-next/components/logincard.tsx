@@ -40,11 +40,10 @@ const LoginCard: React.FC = () => {
         _id: data._id,
         username: data.username,
         email: data.email,
-        profilePictureUrl: data.profilePictureUrl,
       }));
       window.dispatchEvent(new Event(USER_STATE_EVENT));
 
-      router.push("/user_profile");
+      router.push("/me");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -76,11 +75,10 @@ const LoginCard: React.FC = () => {
         _id: data._id,
         username: data.username,
         email: data.email,
-        profilePictureUrl: data.profilePictureUrl,
       }));
       window.dispatchEvent(new Event(USER_STATE_EVENT));
 
-      router.push("/user_profile");
+      router.push("/me");
     } catch (err: any) {
       setError(err.message);
     } finally {

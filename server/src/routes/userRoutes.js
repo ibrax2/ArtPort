@@ -5,6 +5,7 @@ import {
   registerUser,
   loginUser,
   getUserProfile,
+  getUserByUsername,
   updateUser,
 } from "../controllers/userController.js";
 
@@ -13,6 +14,10 @@ const router = express.Router();
 router.route("/").get(getUsers);
 
 router.post("/register", upload.single("profilePicture"), registerUser);
+router.post("/login", loginUser);
+
+router.get("/by-username/:username", getUserByUsername);
+
 router.patch(
   "/:id",
   upload.fields([
@@ -21,7 +26,6 @@ router.patch(
   ]),
   updateUser,
 );
-router.post("/login", loginUser);
 
 router.route("/:id").get(getUserProfile);
 

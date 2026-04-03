@@ -1,7 +1,3 @@
-/**
- * Feedback form API helpers (GET/POST forms + responses).
- * Env: NEXT_PUBLIC_API_URL. Details: docs/BACKEND_INTEGRATION.md
- */
 import type {
   FeedbackFormConfig,
   FeedbackQuestion,
@@ -54,6 +50,31 @@ export async function fetchFeedbackForm(
   }
 
   return data as ApiFeedbackForm;
+}
+
+/**
+ * GET /api/feedbackForm?artworkId=<id>
+ * Returns the most recent feedback form for the artwork, or null if none / auth fails.
+ */
+export async function fetchFeedbackFormByArtworkId(
+  artworkId: string,
+  token: string | null
+): Promise<ApiFeedbackForm | null> {
+  if (!artworkId || !token) return null;
+  try {
+    const res = await fetch(
+      `${API_URL}/api/feedbackForm?artworkId=${encodeURIComponent(artworkId)}`,
+      { headers: authHeaders(token) }
+    );
+    if (!res.ok) return null;
+    const data = (await res.json().catch(() => null)) as unknown;
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const first = data[0] as Partial<ApiFeedbackForm>;
+    if (!first._id || !Array.isArray(first.questions)) return null;
+    return first as ApiFeedbackForm;
+  } catch {
+    return null;
+  }
 }
 
 export function mapApiFormToConfig(form: ApiFeedbackForm): FeedbackFormConfig {

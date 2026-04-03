@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import ProfileCard, {
   type ProfilePostItem,
@@ -14,8 +15,6 @@ type StoredUser = {
   username?: string;
   email?: string;
   token?: string;
-  profilePictureUrl?: string;
-  bannerPictureUrl?: string;
 };
 
 type ApiUserProfile = {
@@ -57,15 +56,39 @@ function mapUserArtworks(
   return items;
 }
 
-export default function UserProfilePage() {
-  const [username, setUsername] = useState("Artist");
+export default function UserProfileClient({
+  usernameParam,
+}: {
+  usernameParam: string;
+}) {
+  const router = useRouter();
+  const [username, setUsername] = useState(usernameParam || "Artist");
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(undefined);
+  const [bannerPictureUrl, setBannerPictureUrl] = useState<string | undefined>(undefined);
   const [userPosts, setUserPosts] = useState<ProfilePostItem[]>([]);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (!raw) return;
+      const user = JSON.parse(raw) as StoredUser;
+      if (user._id) setCurrentUserId(String(user._id));
+      if (
+        typeof user.username === "string" &&
+        user.username.trim().toLowerCase() === usernameParam.trim().toLowerCase()
+      ) {
+        router.replace("/me");
+      }
+    } catch {
+    }
+  }, [router, usernameParam]);
 
   const uploadUserImage = useCallback(
     async (fieldName: "profilePicture" | "bannerPicture", blob: Blob) => {
-      if (!userId) return;
+      if (!userId || !isOwnProfile) return;
 
       const token = localStorage.getItem("token");
       const formData = new FormData();
@@ -91,28 +114,16 @@ export default function UserProfilePage() {
         profilePictureUrl?: string;
         bannerPictureUrl?: string;
       };
-
-      const existingRaw = localStorage.getItem("user");
-      const existing = existingRaw ? (JSON.parse(existingRaw) as StoredUser) : {};
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          ...existing,
-          _id: updated._id ?? existing._id,
-          username: updated.username ?? existing.username,
-          email: updated.email ?? existing.email,
-          profilePictureUrl:
-            updated.profilePictureUrl ?? existing.profilePictureUrl,
-          bannerPictureUrl: updated.bannerPictureUrl ?? existing.bannerPictureUrl,
-        }),
-      );
       window.dispatchEvent(new Event(USER_STATE_EVENT));
 
       if (updated.profilePictureUrl) {
         setProfilePictureUrl(updated.profilePictureUrl);
       }
+      if (updated.bannerPictureUrl) {
+        setBannerPictureUrl(updated.bannerPictureUrl);
+      }
     },
-    [userId],
+    [userId, isOwnProfile],
   );
 
   const handleAvatarImageChange = useCallback(
@@ -130,43 +141,19 @@ export default function UserProfilePage() {
   );
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      if (!raw) return;
-      const user = JSON.parse(raw) as StoredUser;
-      if (user.username) setUsername(user.username);
-      if (user._id) setUserId(String(user._id));
-      if (user.profilePictureUrl) setProfilePictureUrl(user.profilePictureUrl);
-    } catch {
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!userId) return;
-
     let cancelled = false;
 
-    fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}`)
+    fetch(`${API_URL}/api/users/by-username/${encodeURIComponent(usernameParam)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data: ApiUserProfile | null) => {
         if (cancelled || !data) return;
         if (data.username) setUsername(data.username);
+        if (data._id) {
+          setUserId(String(data._id));
+          setIsOwnProfile(String(data._id) === currentUserId);
+        }
         if (data.profilePictureUrl) setProfilePictureUrl(data.profilePictureUrl);
-        const raw = localStorage.getItem("user");
-        const existing = raw ? (JSON.parse(raw) as StoredUser) : {};
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            ...existing,
-            _id: data._id ?? existing._id,
-            username: data.username ?? existing.username,
-            email: data.email ?? existing.email,
-            profilePictureUrl:
-              data.profilePictureUrl ?? existing.profilePictureUrl,
-            bannerPictureUrl: data.bannerPictureUrl ?? existing.bannerPictureUrl,
-          }),
-        );
-        window.dispatchEvent(new Event(USER_STATE_EVENT));
+        if (data.bannerPictureUrl) setBannerPictureUrl(data.bannerPictureUrl);
       })
       .catch(() => {
       });
@@ -174,7 +161,7 @@ export default function UserProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [usernameParam, currentUserId]);
 
   useEffect(() => {
     if (!userId) {
@@ -203,13 +190,15 @@ export default function UserProfilePage() {
       <ProfileCard
         username={username}
         avatarSrc={profilePictureUrl}
-        bio="Welcome to your ArtPort profile."
+        bannerSrc={bannerPictureUrl}
+        bio="Welcome to their ArtPort profile."
         followers={0}
         following={0}
         posts={postCount}
         userPosts={userPosts}
-        onAvatarImageChange={handleAvatarImageChange}
-        onBannerImageChange={handleBannerImageChange}
+        isEditable={isOwnProfile}
+        onAvatarImageChange={isOwnProfile ? handleAvatarImageChange : undefined}
+        onBannerImageChange={isOwnProfile ? handleBannerImageChange : undefined}
       />
     </main>
   );

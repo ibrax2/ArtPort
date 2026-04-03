@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { publicAsset } from "@/lib/paths";
@@ -9,11 +9,12 @@ import SearchBar from "./searchbar";
 import { fetchSearchResults } from "@/lib/searchApi";
 
 type StoredUser = {
-    profilePictureUrl?: string;
+    _id?: string;
 };
 
 const DEFAULT_AVATAR = publicAsset("/avatar-default.svg");
 const USER_STATE_EVENT = "artport-user-updated";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function Navbar() {
     const router = useRouter()
@@ -21,23 +22,45 @@ export default function Navbar() {
     const [isLoggedIn, setIsLoggedIn] = useState(false)
     const [avatarSrc, setAvatarSrc] = useState(DEFAULT_AVATAR)
 
-    const syncUserState = () => {
+    const syncUserState = useCallback(async () => {
         const token = localStorage.getItem("token")
         setIsLoggedIn(!!token)
+
+        if (!token) {
+            setAvatarSrc(DEFAULT_AVATAR)
+            return
+        }
 
         try {
             const rawUser = localStorage.getItem("user")
             const user = rawUser ? (JSON.parse(rawUser) as StoredUser) : null
-            setAvatarSrc(user?.profilePictureUrl || DEFAULT_AVATAR)
+            const userId = user?._id ? String(user._id) : ""
+            if (!userId) {
+                setAvatarSrc(DEFAULT_AVATAR)
+                return
+            }
+
+            const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}`)
+            if (!res.ok) {
+                setAvatarSrc(DEFAULT_AVATAR)
+                return
+            }
+
+            const data = (await res.json().catch(() => ({}))) as {
+                profilePictureUrl?: string
+            }
+            setAvatarSrc(data.profilePictureUrl || DEFAULT_AVATAR)
         } catch {
             setAvatarSrc(DEFAULT_AVATAR)
         }
-    }
+    }, [])
 
     useEffect(() => {
-        syncUserState()
+        void syncUserState()
 
-        const handleUserUpdate = () => syncUserState()
+        const handleUserUpdate = () => {
+            void syncUserState()
+        }
         window.addEventListener(USER_STATE_EVENT, handleUserUpdate)
         window.addEventListener("storage", handleUserUpdate)
 
@@ -45,7 +68,7 @@ export default function Navbar() {
             window.removeEventListener(USER_STATE_EVENT, handleUserUpdate)
             window.removeEventListener("storage", handleUserUpdate)
         }
-    }, [])
+    }, [syncUserState])
 
     const handleSearch = (query?: any, filter?: any) => {
         console.log("Searching:", query, "Filter:", filter)
@@ -61,8 +84,16 @@ export default function Navbar() {
     }
 
     const toggleMenu = () => {
-        syncUserState()
+        void syncUserState()
         setIsOpen(!isOpen)
+    }
+
+    const handleProfileClick = () => {
+        if (!isLoggedIn) {
+            router.push('/login')
+            return
+        }
+        toggleMenu()
     }
 
     return (
@@ -132,7 +163,7 @@ export default function Navbar() {
                 {/* Profile menu */}
                 <button
                     type="button"
-                    onClick={toggleMenu}
+                    onClick={handleProfileClick}
                     aria-label="Open user menu"
                     style={{
                         width: '36px',
@@ -172,7 +203,7 @@ export default function Navbar() {
                         {isLoggedIn ? (
                             <>
                                 <Link
-                                    href="/user_profile"
+                                    href="/me"
                                     onClick={() => setIsOpen(false)}
                                     style={{
                                         color: '#f29f41',
@@ -186,7 +217,7 @@ export default function Navbar() {
                                 </Link>
 
                                 <Link
-                                    href="/user_profile"
+                                    href="/me"
                                     onClick={() => setIsOpen(false)}
                                     style={{
                                         color: '#f29f41',
@@ -230,7 +261,7 @@ export default function Navbar() {
                         ) : (
                             <>
                                 <Link
-                                    href="/user_profile"
+                                    href="/login"
                                     onClick={() => setIsOpen(false)}
                                     style={{
                                         color: '#f29f41',

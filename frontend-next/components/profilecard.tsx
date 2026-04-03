@@ -2,7 +2,7 @@
 
 /**
  * Profile header, avatar/banner crop, posts grid. Cropped images are passed as Blob to optional callbacks.
- * Backend wiring: see docs/BACKEND_INTEGRATION.md (pass `onAvatarImageChange` / `onBannerImageChange` from user_profile page).
+ * Backend wiring: see docs/BACKEND_INTEGRATION.md (pass `onAvatarImageChange` / `onBannerImageChange` from /me page).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -21,16 +21,17 @@ export type ProfileCardProps = {
   username: string;
   bio?: string;
   avatarSrc?: string;
+  bannerSrc?: string;
   followers?: number;
   following?: number;
   posts?: number;
   userPosts?: ProfilePostItem[];
+  isEditable?: boolean;
   onAvatarImageChange?: (blob: Blob) => Promise<void> | void;
   onBannerImageChange?: (blob: Blob) => Promise<void> | void;
 };
 
 const DEFAULT_AVATAR = publicAsset("/avatar-default.svg");
-const LS_BANNER = "artport_profile_banner";
 const BANNER_ASPECT = 935 / 323;
 
 function dataUrlToBlob(dataUrl: string): Blob | null {
@@ -55,17 +56,21 @@ export default function ProfileCard({
   username,
   bio = "",
   avatarSrc: avatarSrcProp,
+  bannerSrc: bannerSrcProp,
   followers = 0,
   following = 0,
   posts = 0,
   userPosts = [],
+  isEditable = false,
   onAvatarImageChange,
   onBannerImageChange,
 }: ProfileCardProps) {
   const [avatarSrc, setAvatarSrc] = useState(
     avatarSrcProp ?? DEFAULT_AVATAR
   );
-  const [bannerSrc, setBannerSrc] = useState<string | null>(null);
+  const [bannerSrc, setBannerSrc] = useState<string | null>(
+    bannerSrcProp ?? null
+  );
   const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
   const [cropMode, setCropMode] = useState<"avatar" | "banner" | null>(null);
   const [pendingTarget, setPendingTarget] = useState<
@@ -78,12 +83,8 @@ export default function ProfileCard({
   }, [avatarSrcProp]);
 
   useEffect(() => {
-    try {
-      const storedBanner = localStorage.getItem(LS_BANNER);
-      if (storedBanner) setBannerSrc(storedBanner);
-    } catch {
-    }
-  }, []);
+    setBannerSrc(bannerSrcProp ?? null);
+  }, [bannerSrcProp]);
 
   const endCropSession = useCallback(() => {
     setRawImageSrc((prev) => {
@@ -119,10 +120,6 @@ export default function ProfileCard({
       }
     } else if (cropMode === "banner") {
       setBannerSrc(dataUrl);
-      try {
-        localStorage.setItem(LS_BANNER, dataUrl);
-      } catch {
-      }
       if (blob && onBannerImageChange) {
         Promise.resolve(onBannerImageChange(blob)).catch(() => {
         });
@@ -151,14 +148,16 @@ export default function ProfileCard({
             className="banner_image"
           />
         ) : null}
-        <button
-          type="button"
-          className="edit_banner_btn"
-          onClick={() => triggerPick("banner")}
-          aria-label="Change banner image"
-        >
-          Edit banner
-        </button>
+        {isEditable && (
+          <button
+            type="button"
+            className="edit_banner_btn"
+            onClick={() => triggerPick("banner")}
+            aria-label="Change banner image"
+          >
+            Edit banner
+          </button>
+        )}
       </div>
 
       <div className="profile_header_row">
@@ -170,14 +169,16 @@ export default function ProfileCard({
             height={200}
             className="profile_pfp_image"
           />
-          <button
-            type="button"
-            className="edit_avatar_btn"
-            onClick={() => triggerPick("avatar")}
-            aria-label="Change profile photo"
-          >
-            Edit
-          </button>
+          {isEditable && (
+            <button
+              type="button"
+              className="edit_avatar_btn"
+              onClick={() => triggerPick("avatar")}
+              aria-label="Change profile photo"
+            >
+              Edit
+            </button>
+          )}
         </div>
 
         <div className="profile_text_block">

@@ -118,6 +118,25 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
+// @desc    Get user profile by username
+// @route   GET /api/users/by-username/:username
+// @access  Public
+export const getUserByUsername = async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username }).select(
+      "-passwordHash -email",
+    );
+
+    if (user) {
+      res.json(withUserDeliveryUrls(user));
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Update user profile
 // @route   PATCH /api/users/:id
 // @access  Public
