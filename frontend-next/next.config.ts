@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BASE_PATH: configuredBasePath,
   },
+  output: "export",
   images: {
     unoptimized: true,
   },
