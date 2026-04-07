@@ -58,30 +58,23 @@ describe("Search Controller", () => {
     it("should return search results for valid query", async () => {
       const mockUsers = [
         {
-          _id: "507f1f77bcf86cd799439011",
-          username: "john_doe",
-          profilePictureUrl: "https://example.com/pic.jpg",
-          bio: "Artist",
+          _id: "69b334f0069481d81cce4065",
+          username: "iai11",
+          profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
+          bio: "",
           score: 5.8,
-        },
-        {
-          _id: "507f1f77bcf86cd799439012",
-          username: "john_smith",
-          profilePictureUrl: "https://example.com/pic2.jpg",
-          bio: "Designer",
-          score: 4.2,
         },
       ];
 
       User.aggregate = jest.fn().mockResolvedValue(mockUsers);
-      req.query = { query: "john" };
+      req.query = { query: "iai" };
 
       await searchUsers(req, res);
 
       expect(User.aggregate).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({
         results: mockUsers,
-        count: 2,
+        count: 1,
       });
     });
 
@@ -127,9 +120,9 @@ describe("Search Controller", () => {
 
     it("should limit results to 20", async () => {
       const mockUsers = Array(20).fill({
-        _id: "507f1f77bcf86cd799439011",
-        username: "user",
-        profilePictureUrl: "",
+        _id: "69b334f0069481d81cce4065",
+        username: "iai11",
+        profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
         bio: "",
         score: 5.8,
       });
@@ -175,24 +168,24 @@ describe("Search Controller", () => {
     it("should return search results with user details", async () => {
       const mockArtworks = [
         {
-          _id: "507f1f77bcf86cd799439001",
-          title: "Mountain Landscape",
-          description: "A beautiful mountain landscape",
-          filePath: "s3://bucket/image.jpg",
-          thumbnailPath: "s3://bucket/thumb.jpg",
-          uploadDate: new Date("2024-03-30"),
+          _id: "69cecc61cfb78afc89c4f396",
+          title: "starry night",
+          description: "desc",
+          filePath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/1775160417057-0b2d6b37e892b9335e132787c2e6b0e9.jpg",
+          thumbnailPath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/thumbnails/1775160417627-68910f10d055e29a669c426ab66e42e0.jpg",
+          uploadDate: new Date("2026-04-02T20:06:57.985+00:00"),
           isPublic: true,
-          userId: "507f1f77bcf86cd799439011",
+          userId: "69b334f0069481d81cce4065",
           userDetails: {
-            username: "artist_name",
-            profilePictureUrl: "https://example.com/pic.jpg",
+            username: "iai11",
+            profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
           },
-          score: 7.2,
+          score: 5.8,
         },
       ];
 
       Artwork.aggregate = jest.fn().mockResolvedValue(mockArtworks);
-      req.query = { query: "landscape" };
+      req.query = { query: "starry night" };
 
       await searchArtworks(req, res);
 
@@ -272,23 +265,23 @@ describe("Search Controller", () => {
 
     it("should limit results to 20", async () => {
       const mockArtworks = Array(20).fill({
-        _id: "507f1f77bcf86cd799439001",
-        title: "Artwork",
-        description: "Description",
-        filePath: "s3://bucket/image.jpg",
-        thumbnailPath: "s3://bucket/thumb.jpg",
-        uploadDate: new Date(),
+        _id: "69cecc61cfb78afc89c4f396",
+        title: "starry night",
+        description: "desc",
+        filePath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/1775160417057-0b2d6b37e892b9335e132787c2e6b0e9.jpg",
+        thumbnailPath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/thumbnails/1775160417627-68910f10d055e29a669c426ab66e42e0.jpg",
+        uploadDate: new Date("2026-04-02T20:06:57.985+00:00"),
         isPublic: true,
-        userId: "507f1f77bcf86cd799439011",
+        userId: "69b334f0069481d81cce4065",
         userDetails: {
-          username: "artist",
-          profilePictureUrl: "",
+          username: "iai11",
+          profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
         },
-        score: 5.0,
+        score: 5.8,
       });
 
       Artwork.aggregate = jest.fn().mockResolvedValue(mockArtworks);
-      req.query = { query: "art" };
+      req.query = { query: "starry night" };
 
       await searchArtworks(req, res);
 
