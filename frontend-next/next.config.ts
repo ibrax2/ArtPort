@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-//const configuredBasePath = ""; // comment out for github pages
-const configuredBasePath = "/ArtPort"; // Uncomment for GitHub Pages deployment
+const configuredBasePath = ""; // comment out for github pages
+//const configuredBasePath = "/ArtPort"; // Uncomment for GitHub Pages deployment
 
 const nextConfig: NextConfig = {
   basePath: configuredBasePath || undefined,

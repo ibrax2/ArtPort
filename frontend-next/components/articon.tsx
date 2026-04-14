@@ -26,7 +26,7 @@ export default function ArtIcon({ post }: { post: Post }) {
             alt=""
             className="articon-avatar"
           />
-          <span className="articon-username">{post.username}</span>
+          <span className="articon-username">by {post.username}</span>
         </div>
 
         <div className="articon-title">{post.title}</div>
