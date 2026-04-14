@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { uploadImageToS3 } from "./imageUploadController.js";
 import { withUserDeliveryUrls } from "../utils/mediaDelivery.js";
 
-const AUTH_COOKIE_NAME = "artport_token";
+const AUTH_COOKIE_NAME = env.process.env.AUTHCOOKIE_NAME || "artport_token";
 
 // Generate JWT token
 const generateToken = (id) => {

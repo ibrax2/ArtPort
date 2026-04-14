@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const AUTH_COOKIE_NAME = "artport_token";
+const AUTH_COOKIE_NAME = env.process.env.AUTHCOOKIE_NAME || "artport_token";
 
 const getTokenFromCookies = (req) => {
   const cookieHeader = req.headers?.cookie;
