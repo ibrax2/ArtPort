@@ -26,6 +26,7 @@ interface ArtworkPostProps {
     createdAt?: string;
     form: { questions: ApiFeedbackResponseQuestion[] };
   }[];
+  otherPosts?: { id: string; imageSrc: string; title: string }[];
 }
 
 function responseValue(question: ApiFeedbackResponseQuestion): string {
@@ -61,6 +62,7 @@ export default function ArtworkPost({
   isOwnerArtwork = false,
   isAuthenticated = true,
   receivedResponses = [],
+  otherPosts = [],
 }: ArtworkPostProps) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const canInteract = isAuthenticated;
@@ -135,6 +137,32 @@ export default function ArtworkPost({
                 <span className={styles.username}>{artistName}</span>
               </div>
             )}
+            
+            <div className={styles.otherPostsSection}>
+              <h2 className={styles.otherPostsHeading}>More from {artistName}</h2>
+              {otherPosts.length > 0 ? (
+                <div className={styles.otherPostsGrid}>
+                  {otherPosts.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/post/${post.id}`}
+                      className={styles.otherPostCard}
+                      title={post.title}
+                    >
+                      <img
+                        src={post.imageSrc}
+                        alt={post.title}
+                        className={styles.otherPostImage}
+                      />
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.noOtherPosts}>
+                  This is their only post so far!
+                </div>
+              )}
+            </div>
           </div>
         )}
 

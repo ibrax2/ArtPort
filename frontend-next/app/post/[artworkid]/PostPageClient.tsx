@@ -9,6 +9,9 @@ import {
   artworkDetailImageUrl,
   fetchArtworkForPost,
   resolveApiAssetUrl,
+  fetchArtworks,
+  artworkMatchesUserId,
+  mapArtworkToProfileItem,
   type ApiArtworkDetail,
 } from "@/lib/artworkApi";
 import {
@@ -36,6 +39,7 @@ export default function PostPageClient({ segment }: Props) {
   const [feedbackFormId, setFeedbackFormId] = useState<string | null>(null);
   const [isOwnerArtwork, setIsOwnerArtwork] = useState(false);
   const [receivedResponses, setReceivedResponses] = useState<ApiFeedbackResponse[]>([]);
+  const [otherPosts, setOtherPosts] = useState<{ id: string; imageSrc: string; title: string }[]>([]);
   const isAuthenticated = Boolean(getClientAuthToken());
 
   useEffect(() => {
@@ -60,6 +64,21 @@ export default function PostPageClient({ segment }: Props) {
           Boolean(artist.userId) &&
           String(currentUser?._id) === String(artist.userId);
         setIsOwnerArtwork(isOwner);
+
+        if (artist.userId) {
+          fetchArtworks().then((allArtworks) => {
+            if (cancelled) return;
+            const otherUserArtworks = allArtworks
+              .filter(
+                (a) =>
+                  artworkMatchesUserId(a, artist.userId) &&
+                  String(a._id) !== String(data._id)
+              )
+              .map((a, index) => mapArtworkToProfileItem(a, index))
+              .slice(0, 4);
+            setOtherPosts(otherUserArtworks);
+          }).catch(() => {});
+        }
 
         let form: ApiFeedbackForm | null = null;
 
@@ -154,6 +173,7 @@ export default function PostPageClient({ segment }: Props) {
       isOwnerArtwork={isOwnerArtwork}
       isAuthenticated={isAuthenticated}
       receivedResponses={receivedResponses}
+      otherPosts={otherPosts}
     />
   );
 }
