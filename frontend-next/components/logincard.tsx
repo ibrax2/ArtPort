@@ -3,10 +3,15 @@
 import { useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 import { persistAuthSession } from "@/lib/authSession";
+import { sanitizeSingleLineText, TEXT_LIMITS } from "@/lib/textInput";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const USER_STATE_EVENT = "artport-user-updated";
 type FormOnSubmit = NonNullable<ComponentProps<"form">["onSubmit"]>;
+
+function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : "Something went wrong";
+}
 
 const LoginCard: React.FC = () => {
   const router = useRouter();
@@ -21,6 +26,12 @@ const LoginCard: React.FC = () => {
     setError("");
     setLoading(true);
 
+    const safeEmail = sanitizeSingleLineText(email, TEXT_LIMITS.email).trim();
+    const safePassword = sanitizeSingleLineText(
+      password,
+      TEXT_LIMITS.password
+    );
+
     try {
       const response = await fetch(`${API_URL}/api/users/login`, {
         method: "POST",
@@ -28,7 +39,7 @@ const LoginCard: React.FC = () => {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: safeEmail, password: safePassword }),
       });
 
       const data = await response.json();
@@ -45,8 +56,8 @@ const LoginCard: React.FC = () => {
       window.dispatchEvent(new Event(USER_STATE_EVENT));
 
       router.push("/me");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -56,6 +67,16 @@ const LoginCard: React.FC = () => {
     setError("");
     setLoading(true);
 
+    const safeUsername = sanitizeSingleLineText(
+      username,
+      TEXT_LIMITS.username
+    ).trim();
+    const safeEmail = sanitizeSingleLineText(email, TEXT_LIMITS.email).trim();
+    const safePassword = sanitizeSingleLineText(
+      password,
+      TEXT_LIMITS.password
+    );
+
     try {
       const response = await fetch(`${API_URL}/api/users/register`, {
         method: "POST",
@@ -63,7 +84,11 @@ const LoginCard: React.FC = () => {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({
+          username: safeUsername,
+          email: safeEmail,
+          password: safePassword,
+        }),
       });
 
       const data = await response.json();
@@ -80,8 +105,8 @@ const LoginCard: React.FC = () => {
       window.dispatchEvent(new Event(USER_STATE_EVENT));
 
       router.push("/me");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -119,7 +144,12 @@ const LoginCard: React.FC = () => {
               className="input-box"
               placeholder="Enter your username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) =>
+                setUsername(
+                  sanitizeSingleLineText(e.target.value, TEXT_LIMITS.username)
+                )
+              }
+              maxLength={TEXT_LIMITS.username}
               required
             />
           </>
@@ -132,7 +162,10 @@ const LoginCard: React.FC = () => {
           className="input-box"
           placeholder="Enter your email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) =>
+            setEmail(sanitizeSingleLineText(e.target.value, TEXT_LIMITS.email))
+          }
+          maxLength={TEXT_LIMITS.email}
           required
         />
 
@@ -143,7 +176,12 @@ const LoginCard: React.FC = () => {
           className="input-box"
           placeholder="Enter your password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) =>
+            setPassword(
+              sanitizeSingleLineText(e.target.value, TEXT_LIMITS.password)
+            )
+          }
+          maxLength={TEXT_LIMITS.password}
           required
         />
 

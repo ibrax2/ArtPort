@@ -3,6 +3,7 @@ import type {
   FeedbackQuestion,
 } from "@/types/feedback";
 import { getClientAuthToken } from "@/lib/authSession";
+import { sanitizeMultilineText, TEXT_LIMITS } from "@/lib/textInput";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -38,6 +39,7 @@ export type ApiFeedbackResponse = {
   _id: string;
   feedbackId: string;
   userId: string;
+  username?: string | null;
   createdAt?: string;
   form: {
     questions: ApiFeedbackResponseQuestion[];
@@ -184,7 +186,10 @@ export function buildResponseAnswers(
     }
 
     if (q.type === "text") {
-      const s = typeof raw === "string" ? raw.trim() : "";
+      const s =
+        typeof raw === "string"
+          ? sanitizeMultilineText(raw, TEXT_LIMITS.feedbackText).trim()
+          : "";
       if (!s) continue;
       out.push({ questionId: q.id, textValue: s });
       continue;

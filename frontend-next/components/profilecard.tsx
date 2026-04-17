@@ -1,10 +1,11 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 /**
  * Profile header, avatar/banner crop, posts grid. Cropped images are passed as Blob to optional callbacks.
  * Backend wiring: see docs/BACKEND_INTEGRATION.md (pass `onAvatarImageChange` / `onBannerImageChange` from /me page).
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import ImageCropModal from "@/components/profile/ImageCropModal";
 import Folder from "@/components/folder";
@@ -77,14 +78,6 @@ export default function ProfileCard({
     "avatar" | "banner" | null
   >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setAvatarSrc(avatarSrcProp ?? DEFAULT_AVATAR);
-  }, [avatarSrcProp]);
-
-  useEffect(() => {
-    setBannerSrc(bannerSrcProp ?? null);
-  }, [bannerSrcProp]);
 
   const endCropSession = useCallback(() => {
     setRawImageSrc((prev) => {

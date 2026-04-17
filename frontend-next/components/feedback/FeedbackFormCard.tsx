@@ -16,6 +16,7 @@ import {
   submitFeedbackResponse,
 } from "@/lib/feedbackApi";
 import { getClientAuthToken } from "@/lib/authSession";
+import { sanitizeMultilineText, TEXT_LIMITS } from "@/lib/textInput";
 
 import styles from "./FeedbackFormCard.module.css";
 
@@ -67,7 +68,10 @@ export default function FeedbackFormCard({
   };
 
   const setText = (id: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [id]: value }));
+    setAnswers((prev) => ({
+      ...prev,
+      [id]: sanitizeMultilineText(value, TEXT_LIMITS.feedbackText),
+    }));
     setSubmitError("");
   };
 
@@ -268,6 +272,7 @@ export default function FeedbackFormCard({
                       value={value}
                       onChange={(ev) => setText(q.id, ev.target.value)}
                       aria-required={q.required}
+                      maxLength={TEXT_LIMITS.feedbackText}
                     />
                   </QuestionField>
                 );

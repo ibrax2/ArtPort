@@ -55,32 +55,36 @@ export default function RequireAuth({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let shouldRedirect = false;
+    const timeoutId = window.setTimeout(() => {
+      let shouldRedirect = false;
 
-    const token = getClientAuthToken();
-    const rawUser = localStorage.getItem("user");
+      const token = getClientAuthToken();
+      const rawUser = localStorage.getItem("user");
 
-    if (!token || !rawUser) {
-      shouldRedirect = true;
-    } else {
-      const user = JSON.parse(rawUser) as StoredUser;
-      if (!user._id || isJwtExpired(token)) {
+      if (!token || !rawUser) {
         shouldRedirect = true;
       } else {
-        setAuthTokenCookie(token);
+        const user = JSON.parse(rawUser) as StoredUser;
+        if (!user._id || isJwtExpired(token)) {
+          shouldRedirect = true;
+        } else {
+          setAuthTokenCookie(token);
+        }
       }
-    }
 
-    if (shouldRedirect) {
-      clearAuthSession();
-      setIsAuthed(false);
+      if (shouldRedirect) {
+        clearAuthSession();
+        setIsAuthed(false);
+        setIsLoading(false);
+        router.replace("/login");
+        return;
+      }
+
+      setIsAuthed(true);
       setIsLoading(false);
-      router.replace("/login");
-      return;
-    }
+    }, 0);
 
-    setIsAuthed(true);
-    setIsLoading(false);
+    return () => window.clearTimeout(timeoutId);
   }, [router]);
 
   if (isLoading) {

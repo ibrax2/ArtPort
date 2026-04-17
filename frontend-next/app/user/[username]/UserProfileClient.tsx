@@ -87,7 +87,6 @@ export default function UserProfileClient({
 
   useEffect(() => {
     if (!userId) {
-      setUserPosts([]);
       return;
     }
     let cancelled = false;
@@ -104,11 +103,20 @@ export default function UserProfileClient({
     };
   }, [userId]);
 
+  const visibleUserPosts = userId ? userPosts : [];
+  const profileCardKey = [
+    usernameParam,
+    username,
+    profilePictureUrl ?? "",
+    bannerPictureUrl ?? "",
+  ].join("|");
+
   const postCount = userPosts.length;
 
   return (
     <main className="user-profile-main">
       <ProfileCard
+        key={profileCardKey}
         username={username}
         avatarSrc={profilePictureUrl}
         bannerSrc={bannerPictureUrl}
@@ -116,7 +124,7 @@ export default function UserProfileClient({
         followers={0}
         following={0}
         posts={postCount}
-        userPosts={userPosts}
+        userPosts={visibleUserPosts}
         isEditable={false}
       />
     </main>

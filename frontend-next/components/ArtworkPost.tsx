@@ -1,10 +1,10 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import React, { useState } from "react";
 
 import styles from "./ArtworkPost.module.css";
 import FeedbackFormCard from "@/components/feedback/FeedbackFormCard";
-import defaultFeedbackConfig from "@/data/feedback-questions.json";
 import type { ApiFeedbackResponseQuestion } from "@/lib/feedbackApi";
 import type { FeedbackFormConfig } from "@/types/feedback";
 
@@ -22,6 +22,7 @@ interface ArtworkPostProps {
   receivedResponses?: {
     _id: string;
     userId: string;
+    username?: string | null;
     createdAt?: string;
     form: { questions: ApiFeedbackResponseQuestion[] };
   }[];
@@ -62,8 +63,8 @@ export default function ArtworkPost({
   receivedResponses = [],
 }: ArtworkPostProps) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const formConfig = feedbackConfig ?? (defaultFeedbackConfig as FeedbackFormConfig);
   const canInteract = isAuthenticated;
+  const hasFeedbackForm = Boolean(feedbackConfig && feedbackFormId);
   const buttonOpenLabel = isOwnerArtwork ? "View Responses" : "Leave Feedback";
   const buttonCloseLabel = isOwnerArtwork ? "Close Responses" : "Close Feedback";
 
@@ -90,6 +91,7 @@ export default function ArtworkPost({
                 <button
                   className={styles.feedbackButton}
                   onClick={() => setFeedbackOpen(!feedbackOpen)}
+                  disabled={!hasFeedbackForm && !isOwnerArtwork}
                 >
                   {feedbackOpen ? buttonCloseLabel : buttonOpenLabel}
                 </button>
@@ -148,7 +150,9 @@ export default function ArtworkPost({
                   receivedResponses.map((response) => (
                     <article key={response._id} className={styles.responseCard}>
                       <div className={styles.responseMeta}>
-                        <span className={styles.responseUser}>User: {response.userId}</span>
+                        <span className={styles.responseUser}>
+                          User: {response.username || response.userId}
+                        </span>
                         {response.createdAt ? (
                           <span className={styles.responseDate}>
                             {new Date(response.createdAt).toLocaleString()}
@@ -170,11 +174,20 @@ export default function ArtworkPost({
                   ))
                 )}
               </div>
-            ) : (
+            ) : hasFeedbackForm && feedbackConfig ? (
               <FeedbackFormCard
-                config={formConfig as FeedbackFormConfig}
+                config={feedbackConfig}
                 remoteFormId={feedbackFormId}
               />
+            ) : (
+              <div style={{ padding: "16px", textAlign: "center" }}>
+                <p style={{ color: "#666", marginBottom: "12px" }}>
+                  No feedback form has been created for this artwork yet.
+                </p>
+                <p style={{ fontSize: "14px", color: "#999" }}>
+                  The artist can create a feedback form from the upload page.
+                </p>
+              </div>
             )}
           </div>
         )}

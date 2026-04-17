@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 /**
  * Artwork + square thumbnail upload UI. Sends FormData via optional `onUpload`.
@@ -8,6 +9,11 @@ import React, { useRef, useState } from "react";
 
 import ImageCropModal from "@/components/profile/ImageCropModal";
 import { dataUrlToBlob } from "@/lib/cropImage";
+import {
+  sanitizeMultilineText,
+  sanitizeSingleLineText,
+  TEXT_LIMITS,
+} from "@/lib/textInput";
 
 const ACCEPT_IMAGES =
   "image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/heic,image/heif";
@@ -126,6 +132,14 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
     if (!onUpload) {
       return;
     }
+    const safeTitle = sanitizeSingleLineText(
+      title,
+      TEXT_LIMITS.artworkTitle
+    ).trim();
+    const safeDescription = sanitizeMultilineText(
+      description,
+      TEXT_LIMITS.artworkDescription
+    ).trim();
     const formData = new FormData();
     formData.append("image", selectedFile);
     formData.append(
@@ -134,8 +148,8 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
       "thumbnail.jpg"
     );
     if (userId) formData.append("userId", userId);
-    formData.append("title", title.trim());
-    if (description.trim()) formData.append("description", description.trim());
+    formData.append("title", safeTitle);
+    if (safeDescription) formData.append("description", safeDescription);
 
     try {
       setSubmitting(true);
@@ -257,9 +271,12 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
           placeholder="Enter title"
           value={title}
           onChange={(e) => {
-            setTitle(e.target.value);
+            setTitle(
+              sanitizeSingleLineText(e.target.value, TEXT_LIMITS.artworkTitle)
+            );
             setSubmitError("");
           }}
+          maxLength={TEXT_LIMITS.artworkTitle}
           required
           aria-required="true"
         />
@@ -274,7 +291,15 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
           className="textarea-input"
           placeholder="Enter description"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) =>
+            setDescription(
+              sanitizeMultilineText(
+                e.target.value,
+                TEXT_LIMITS.artworkDescription
+              )
+            )
+          }
+          maxLength={TEXT_LIMITS.artworkDescription}
         />
       </div>
 

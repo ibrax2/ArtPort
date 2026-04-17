@@ -14,7 +14,7 @@ export default async function PostPage({
         <p style={{ padding: 24, fontFamily: "Inter, sans-serif" }}>Loading…</p>
       }
     >
-      <PostPageClient segment={artworkid} />
+      <PostPageClient key={artworkid} segment={artworkid} />
     </Suspense>
   );
 }

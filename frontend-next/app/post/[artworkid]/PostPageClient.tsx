@@ -40,12 +40,6 @@ export default function PostPageClient({ segment }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError("");
-    setFeedbackConfig(null);
-    setFeedbackFormId(null);
-    setIsOwnerArtwork(false);
-    setReceivedResponses([]);
 
     fetchArtworkForPost(segment)
       .then(async (data) => {

@@ -4,6 +4,7 @@ import Question from "../models/Question.js";
 import Option from "../models/Option.js";
 import Response from "../models/Response.js";
 import Answer from "../models/Answer.js";
+import User from "../models/User.js";
 
 const isObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
@@ -188,7 +189,16 @@ export const getFeedbackForms = async (req, res) => {
     }
 
     const resolvedArtworkId = artworkId;
-    const query = { createdBy: authUserId };
+    const query = {};
+
+    // Only filter by creator if requesting own forms or no filters specified
+    // When fetching by artworkId, allow public access (form creator doesn't restrict viewers)
+    if (requestedOwnerId) {
+      query.createdBy = authUserId;
+    } else if (!resolvedArtworkId) {
+      // If no artworkId or userId specified, default to own forms
+      query.createdBy = authUserId;
+    }
 
     if (resolvedArtworkId !== undefined) {
       if (!isObjectId(resolvedArtworkId)) {
@@ -613,6 +623,7 @@ const buildResponseView = (response, formView, answers, questionById) => {
     _id: response._id,
     feedbackId: response.feedbackId,
     userId: response.userId,
+    username: response.username,
     uploadDate: response.uploadDate,
     createdAt: response.createdAt,
     updatedAt: response.updatedAt,
@@ -648,8 +659,17 @@ const getResponseByIdInternal = async (responseId) => {
   const answers = await Answer.find({ responseId: response._id });
   const questions = await Question.find({ feedbackId: response.feedbackId });
   const questionById = new Map(questions.map((q) => [String(q._id), q]));
+  const responder = await User.findById(response.userId).select("username");
 
-  return buildResponseView(response, formView, answers, questionById);
+  return buildResponseView(
+    {
+      ...response.toObject(),
+      username: responder?.username || null,
+    },
+    formView,
+    answers,
+    questionById,
+  );
 };
 
 // @desc    Get one response including the full form structure + chosen answers

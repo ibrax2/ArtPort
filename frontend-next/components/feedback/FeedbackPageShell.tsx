@@ -16,25 +16,19 @@ import styles from "@/app/feedback/feedback.module.css";
 
 const staticConfig = feedbackConfig as FeedbackFormConfig;
 
-function FeedbackPageInner() {
-  const searchParams = useSearchParams();
-  const formId = searchParams.get("formId")?.trim() || "";
+function FeedbackPageLoader({ formId }: { formId: string }) {
+  const initialLoading = Boolean(formId);
 
   const [apiConfig, setApiConfig] = useState<FeedbackFormConfig | null>(null);
   const [loadError, setLoadError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(initialLoading);
 
   useEffect(() => {
     if (!formId) {
-      setApiConfig(null);
-      setLoadError("");
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
-    setLoadError("");
-    setApiConfig(null);
 
     const token = getClientAuthToken();
 
@@ -91,6 +85,13 @@ function FeedbackPageInner() {
       <FeedbackFormCard config={staticConfig} />
     </main>
   );
+}
+
+function FeedbackPageInner() {
+  const searchParams = useSearchParams();
+  const formId = searchParams.get("formId")?.trim() || "";
+
+  return <FeedbackPageLoader key={formId || "local"} formId={formId} />;
 }
 
 export default function FeedbackPageShell() {

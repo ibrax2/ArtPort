@@ -128,7 +128,6 @@ function MePageContent() {
 
   useEffect(() => {
     if (!userId) {
-      setUserPosts([]);
       return;
     }
     let cancelled = false;
@@ -145,11 +144,20 @@ function MePageContent() {
     };
   }, [userId]);
 
+  const visibleUserPosts = userId ? userPosts : [];
+  const profileCardKey = [
+    userId ?? "anon",
+    username,
+    profilePictureUrl ?? "",
+    bannerPictureUrl ?? "",
+  ].join("|");
+
   const postCount = userPosts.length;
 
   return (
     <main className="user-profile-main">
       <ProfileCard
+        key={profileCardKey}
         username={username}
         avatarSrc={profilePictureUrl}
         bannerSrc={bannerPictureUrl}
@@ -157,7 +165,7 @@ function MePageContent() {
         followers={0}
         following={0}
         posts={postCount}
-        userPosts={userPosts}
+        userPosts={visibleUserPosts}
         isEditable={true}
         onAvatarImageChange={handleAvatarImageChange}
         onBannerImageChange={handleBannerImageChange}

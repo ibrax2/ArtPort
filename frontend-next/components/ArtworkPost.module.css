@@ -92,11 +92,13 @@
 
 /* Feedback panel (replaces sidebar when open) */
 .feedbackPanel {
-  width: 550px;
+  width: min(550px, 100%);
+  max-width: 100%;
   flex-shrink: 0;
   align-self: flex-start;
   height: 700px;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .responsesList {
@@ -127,6 +129,8 @@
   border: 1px solid #d4b894;
   border-radius: 8px;
   padding: 12px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .responseCard + .responseCard {
@@ -139,6 +143,7 @@
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
 }
 
 .responseUser,
@@ -146,6 +151,8 @@
 .responseQuestion,
 .responseValue {
   font-family: 'Inter', sans-serif;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .responseUser {
@@ -169,6 +176,8 @@
   background: #ffffff;
   border-radius: 6px;
   padding: 8px 10px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .responseQuestion {

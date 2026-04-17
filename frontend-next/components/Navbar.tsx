@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -12,7 +13,6 @@ import { fetchCurrentUser } from "@/lib/currentUserApi";
 
 const DEFAULT_AVATAR = publicAsset("/avatar-default.svg");
 const USER_STATE_EVENT = "artport-user-updated";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function Navbar() {
     const router = useRouter()
@@ -43,7 +43,9 @@ export default function Navbar() {
     }, [])
 
     useEffect(() => {
-        void syncUserState()
+        const timeoutId = window.setTimeout(() => {
+            void syncUserState()
+        }, 0)
 
         const handleUserUpdate = () => {
             void syncUserState()
@@ -52,12 +54,13 @@ export default function Navbar() {
         window.addEventListener("storage", handleUserUpdate)
 
         return () => {
+            window.clearTimeout(timeoutId)
             window.removeEventListener(USER_STATE_EVENT, handleUserUpdate)
             window.removeEventListener("storage", handleUserUpdate)
         }
     }, [syncUserState])
 
-    const handleSearch = (query?: any, filter?: any) => {
+    const handleSearch = (query: string, filter: string) => {
         console.log("Searching:", query, "Filter:", filter)
     }
 
