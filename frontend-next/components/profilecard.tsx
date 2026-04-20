@@ -67,12 +67,16 @@ export default function ProfileCard({
   onBannerImageChange,
 }: ProfileCardProps) {
   const [avatarSrc, setAvatarSrc] = useState(avatarSrcProp ?? DEFAULT_AVATAR);
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
   const [bannerSrc, setBannerSrc] = useState<string | null>(bannerSrcProp ?? null);
   const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
   const [cropMode, setCropMode] = useState<"avatar" | "banner" | null>(null);
   const [pendingTarget, setPendingTarget] = useState<"avatar" | "banner" | null>(null);
   const [activeTab, setActiveTab] = useState<"posts" | "collections">("posts");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAddFolder, setShowAddFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderVisibility, setNewFolderVisibility] = useState<"public" | "private">("public");
 
   const endCropSession = useCallback(() => {
     setRawImageSrc((prev) => {
@@ -103,12 +107,12 @@ export default function ProfileCard({
     if (cropMode === "avatar") {
       setAvatarSrc(dataUrl);
       if (blob && onAvatarImageChange) {
-        Promise.resolve(onAvatarImageChange(blob)).catch(() => {});
+        Promise.resolve(onAvatarImageChange(blob)).catch(() => { });
       }
     } else if (cropMode === "banner") {
       setBannerSrc(dataUrl);
       if (blob && onBannerImageChange) {
-        Promise.resolve(onBannerImageChange(blob)).catch(() => {});
+        Promise.resolve(onBannerImageChange(blob)).catch(() => { });
       }
     }
     endCropSession();
@@ -194,16 +198,38 @@ export default function ProfileCard({
           >
             Collections
           </button>
+          {activeTab === "collections" && !openFolder && (
+            <button
+              className="add_folder_btn"
+              type="button"
+              aria-label="Add folder"
+              onClick={() => setShowAddFolder(true)}
+            >
+              +
+            </button>
+          )}
         </div>
 
         {/* Tab Content */}
         <div className="tab_content">
           {activeTab === "posts" ? (
             <ProfilePostsGrid posts={userPosts} username={username} />
+          ) : openFolder ? (
+            <div className="folder_contents">
+              <button
+                className="folder_back_btn"
+                onClick={() => setOpenFolder(null)}
+                type="button"
+              >
+                ← Back to Collections
+              </button>
+              <h3 className="folder_contents_title">{openFolder}</h3>
+              <p className="folder_contents_empty">This folder is empty.</p>
+            </div>
           ) : (
             <div className="folder_row">
-              <Folder label="Portfolio" />
-              <Folder label="Archive" />
+              <Folder label="Portfolio" onClick={() => setOpenFolder("Portfolio")} />
+              <Folder label="Archive" onClick={() => setOpenFolder("Archive")} />
             </div>
           )}
         </div>
@@ -219,6 +245,76 @@ export default function ProfileCard({
           onCancel={endCropSession}
         />
       ) : null}
+      {showAddFolder && (
+        <div className="modal_overlay" onClick={() => setShowAddFolder(false)}>
+          <div className="modal_box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal_title">New Folder</h3>
+
+            <label className="modal_label" htmlFor="folder_name_input">
+              Folder name
+            </label>
+            <input
+              id="folder_name_input"
+              className="modal_input"
+              type="text"
+              placeholder="e.g. Sketchbook"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              autoFocus
+            />
+
+            <div className="modal_radio_group">
+              <label className="modal_radio_label">
+                <input
+                  type="radio"
+                  name="folder_visibility"
+                  value="public"
+                  checked={newFolderVisibility === "public"}
+                  onChange={() => setNewFolderVisibility("public")}
+                />
+                Public
+              </label>
+              <label className="modal_radio_label">
+                <input
+                  type="radio"
+                  name="folder_visibility"
+                  value="private"
+                  checked={newFolderVisibility === "private"}
+                  onChange={() => setNewFolderVisibility("private")}
+                />
+                Private
+              </label>
+            </div>
+
+            <div className="modal_actions">
+              <button
+                className="modal_cancel_btn"
+                type="button"
+                onClick={() => {
+                  setShowAddFolder(false);
+                  setNewFolderName("");
+                  setNewFolderVisibility("public");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal_add_btn"
+                type="button"
+                disabled={!newFolderName.trim()}
+                onClick={() => {
+                  // TODO: wire up to backend
+                  setShowAddFolder(false);
+                  setNewFolderName("");
+                  setNewFolderVisibility("public");
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

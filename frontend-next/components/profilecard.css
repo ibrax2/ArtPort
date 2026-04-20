@@ -192,7 +192,8 @@
   flex-direction: column;
   min-height: 489px;
   box-sizing: border-box;
-  overflow: visible; /* was hidden */
+  overflow: visible;
+  /* was hidden */
 }
 
 .tab_bar {
@@ -266,4 +267,185 @@
 
 .separation .profile_posts_section {
   width: 100%;
+}
+
+.folder_contents {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.folder_back_btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  padding: 0;
+  text-align: left;
+  width: fit-content;
+}
+
+.folder_back_btn:hover {
+  color: #000;
+}
+
+.folder_contents_title {
+  margin: 0;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+}
+
+.folder_contents_empty {
+  margin: 0;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  color: #999;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.add_folder_btn {
+  margin-left: auto;
+  margin-right: 12px;
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: #000;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: background 0.15s ease;
+}
+
+.add_folder_btn:hover {
+  background: #f0f0f0;
+}
+
+.modal_overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal_box {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px 32px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+.modal_title {
+  margin: 0;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #000;
+}
+
+.modal_label {
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: -8px;
+}
+
+.modal_input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  color: #111;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.modal_input:focus {
+  border-color: #f29f41;
+}
+
+.modal_radio_group {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+.modal_radio_label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+}
+
+.modal_actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.modal_cancel_btn {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.modal_cancel_btn:hover {
+  background: #f3f4f6;
+}
+
+.modal_add_btn {
+  background: #f29f41;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.modal_add_btn:hover {
+  background: #e08e30;
+}
+
+.modal_add_btn:disabled {
+  background: #f0c98a;
+  cursor: not-allowed;
 }
