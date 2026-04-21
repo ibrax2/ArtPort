@@ -1,6 +1,5 @@
+import { apiFetch } from "@/lib/apiClient";
 import { getClientAuthToken } from "@/lib/authSession";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export type CurrentUserProfile = {
   _id?: string;
@@ -15,15 +14,10 @@ export async function fetchCurrentUser(
   token?: string | null
 ): Promise<CurrentUserProfile | null> {
   const authToken = token || getClientAuthToken();
-  const headers: HeadersInit = {};
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
 
   try {
-    const res = await fetch(`${API_URL}/api/users/me`, {
-      headers,
-      credentials: "include",
+    const res = await apiFetch("/api/users/me", {
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
     });
 
     if (!res.ok) {

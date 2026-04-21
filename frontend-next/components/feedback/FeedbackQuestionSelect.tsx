@@ -7,12 +7,22 @@ import QuestionField from "@/components/questions/QuestionField";
 import CheckboxOption from "@/components/questions/CheckboxOption";
 import RadioOption from "@/components/questions/RadioOption";
 import RatingScale from "@/components/questions/RatingScale";
-import type { FeedbackFormConfig, FeedbackQuestion } from "@/types/feedback";
+import FeedbackTextAnswer from "@/components/questions/FeedbackTextAnswer";
+import type {
+  FeedbackFormConfig,
+  FeedbackQuestion,
+  FeedbackQuestionText,
+} from "@/types/feedback";
 import {
   createFeedbackForm,
   mapFeedbackQuestionsToCreatePayload,
 } from "@/lib/feedbackApi";
 import { getClientAuthToken } from "@/lib/authSession";
+import {
+  sanitizeMultilineText,
+  sanitizeSingleLineText,
+  TEXT_LIMITS,
+} from "@/lib/textInput";
 
 import styles from "./FeedbackQuestionSelect.module.css";
 
@@ -25,14 +35,27 @@ export default function FeedbackQuestionSelect({
   config,
   initialArtworkId = "",
 }: Props) {
-  const ids = useMemo(
-    () => config.questions.map((q) => q.id),
-    [config.questions]
+  const [customTextQuestions, setCustomTextQuestions] = useState<
+    FeedbackQuestionText[]
+  >([]);
+
+  const [draftLabel, setDraftLabel] = useState("");
+  const [draftHelp, setDraftHelp] = useState("");
+  const [draftRequired, setDraftRequired] = useState(false);
+
+  const mergedQuestions = useMemo(
+    () => [...config.questions, ...customTextQuestions],
+    [config.questions, customTextQuestions]
+  );
+
+  const customIds = useMemo(
+    () => new Set(customTextQuestions.map((q) => q.id)),
+    [customTextQuestions]
   );
 
   const [included, setIncluded] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
-    for (const id of ids) init[id] = true;
+    for (const q of config.questions) init[q.id] = true;
     return init;
   });
 
@@ -48,9 +71,50 @@ export default function FeedbackQuestionSelect({
     setCreatedFormId(null);
   };
 
+  const addCustomTextQuestion = () => {
+    const label = sanitizeSingleLineText(
+      draftLabel,
+      TEXT_LIMITS.feedbackQuestionLabel
+    ).trim();
+    if (!label) {
+      setError("Enter the question text for your custom text field.");
+      return;
+    }
+    const helpRaw = sanitizeMultilineText(
+      draftHelp,
+      TEXT_LIMITS.feedbackQuestionHelp
+    ).trim();
+    const detail = helpRaw || undefined;
+    const id = `custom-${crypto.randomUUID()}`;
+    const q: FeedbackQuestionText = {
+      id,
+      type: "text",
+      label,
+      detail,
+      required: draftRequired,
+    };
+    setCustomTextQuestions((prev) => [...prev, q]);
+    setIncluded((prev) => ({ ...prev, [id]: true }));
+    setDraftLabel("");
+    setDraftHelp("");
+    setDraftRequired(false);
+    setError("");
+    setCreatedFormId(null);
+  };
+
+  const removeCustomQuestion = (id: string) => {
+    setCustomTextQuestions((prev) => prev.filter((q) => q.id !== id));
+    setIncluded((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    setCreatedFormId(null);
+  };
+
   const selectedQuestions = useMemo(() => {
-    return config.questions.filter((q) => included[q.id]);
-  }, [config.questions, included]);
+    return mergedQuestions.filter((q) => included[q.id]);
+  }, [mergedQuestions, included]);
 
   const hasArtworkContext = trimmedArtworkId.length > 0;
 
@@ -91,17 +155,87 @@ export default function FeedbackQuestionSelect({
 
   const pageTitle =
     config.selectPageTitle ?? "Choose questions for your feedback form";
+  const answerCap = TEXT_LIMITS.feedbackTextAnswer;
   return (
     <div>
       <h1 className={styles.pageTitle}>{pageTitle}</h1>
 
+      <section className={styles.customBuilder} aria-label="Add custom text question">
+        <h2 className={styles.customBuilderTitle}>Add a custom text question</h2>
+        <p className={styles.customBuilderHint}>
+          Define the question and optional help text. Respondents get a text box
+          with a {answerCap}-character limit.
+        </p>
+        <div className={styles.customBuilderFields}>
+          <label className={styles.fieldLabel}>
+            Question
+            <input
+              type="text"
+              className={styles.fieldInput}
+              value={draftLabel}
+              maxLength={TEXT_LIMITS.feedbackQuestionLabel}
+              onChange={(e) =>
+                setDraftLabel(
+                  sanitizeSingleLineText(
+                    e.target.value,
+                    TEXT_LIMITS.feedbackQuestionLabel
+                  )
+                )
+              }
+              placeholder="e.g. What stands out to you first?"
+              autoComplete="off"
+            />
+          </label>
+          <label className={styles.fieldLabel}>
+            Help <span className={styles.optionalMark}>(optional)</span>
+            <textarea
+              className={styles.fieldTextarea}
+              value={draftHelp}
+              rows={3}
+              maxLength={TEXT_LIMITS.feedbackQuestionHelp}
+              onChange={(e) =>
+                setDraftHelp(
+                  sanitizeMultilineText(
+                    e.target.value,
+                    TEXT_LIMITS.feedbackQuestionHelp
+                  )
+                )
+              }
+              placeholder="Shown in the help panel next to the question"
+            />
+          </label>
+          <label className={styles.requiredRow}>
+            <input
+              type="checkbox"
+              className={styles.requiredCheckbox}
+              checked={draftRequired}
+              onChange={(e) => setDraftRequired(e.target.checked)}
+            />
+            <span>Required answer</span>
+          </label>
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            onClick={addCustomTextQuestion}
+          >
+            Add text question
+          </button>
+        </div>
+      </section>
+
       <div className={styles.questions}>
-        {config.questions.map((q) => (
+        {mergedQuestions.map((q) => (
           <QuestionPreviewRow
             key={q.id}
             q={q}
             included={included[q.id] !== false}
             onIncludedChange={(checked) => toggleInclude(q.id, checked)}
+            onRemove={
+              customIds.has(q.id)
+                ? () => removeCustomQuestion(q.id)
+                : undefined
+            }
+            answerCharLimit={answerCap}
           />
         ))}
       </div>
@@ -135,10 +269,14 @@ function QuestionPreviewRow({
   q,
   included,
   onIncludedChange,
+  onRemove,
+  answerCharLimit,
 }: {
   q: FeedbackQuestion;
   included: boolean;
   onIncludedChange: (checked: boolean) => void;
+  onRemove?: () => void;
+  answerCharLimit: number;
 }) {
   return (
     <div
@@ -156,13 +294,31 @@ function QuestionPreviewRow({
         </label>
       </div>
       <div className={styles.previewCol}>
-        <QuestionPreview q={q} />
+        <QuestionPreview q={q} answerCharLimit={answerCharLimit} />
       </div>
+      {onRemove ? (
+        <div className={styles.removeCol}>
+          <button
+            type="button"
+            className={styles.removeBtn}
+            onClick={onRemove}
+            aria-label={`Remove custom question: ${q.label}`}
+          >
+            Remove
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }
 
-function QuestionPreview({ q }: { q: FeedbackQuestion }) {
+function QuestionPreview({
+  q,
+  answerCharLimit,
+}: {
+  q: FeedbackQuestion;
+  answerCharLimit: number;
+}) {
   if (q.type === "rating") {
     return (
       <QuestionField label={q.label} detail={q.detail} required={q.required}>
@@ -220,20 +376,18 @@ function QuestionPreview({ q }: { q: FeedbackQuestion }) {
   if (q.type === "text") {
     return (
       <QuestionField label={q.label} detail={q.detail} required={q.required}>
-        <textarea
+        <FeedbackTextAnswer
+          value=""
           readOnly
           disabled
-          rows={4}
-          aria-hidden
-          style={{
-            width: "100%",
-            borderRadius: 12,
-            border: "1px solid #c9b297",
-            background: "#f5f0e8",
-            padding: "0.5rem 0.75rem",
-            opacity: 0.85,
-          }}
+          maxLength={answerCharLimit}
+          showCounter={false}
+          ariaHidden
+          placeholder={`Answer (max ${answerCharLimit} characters)`}
         />
+        <p className={styles.previewTextHint}>
+          Answers are limited to {answerCharLimit} characters.
+        </p>
       </QuestionField>
     );
   }

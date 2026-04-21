@@ -52,20 +52,6 @@
   cursor: not-allowed;
 }
 
-.textArea {
-  @apply w-full rounded-xl border px-3 py-2 text-base text-[#2a241c];
-  border-color: #c9b297;
-  background: #fffaf5;
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
-  resize: vertical;
-  min-height: 96px;
-}
-
-.textArea:focus-visible {
-  outline: 2px solid #215a80;
-  outline-offset: 2px;
-}
-
 .thanks {
   @apply flex flex-col gap-4 items-start;
 }

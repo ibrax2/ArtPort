@@ -1,11 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-/**
- * Profile header, avatar/banner crop, posts grid. Cropped images are passed as Blob to optional callbacks.
- * Backend wiring: see docs/BACKEND_INTEGRATION.md (pass `onAvatarImageChange` / `onBannerImageChange` from /me page).
- */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import ImageCropModal from "@/components/profile/ImageCropModal";
 import Folder from "@/components/folder";
@@ -30,6 +26,7 @@ export type ProfileCardProps = {
   isEditable?: boolean;
   onAvatarImageChange?: (blob: Blob) => Promise<void> | void;
   onBannerImageChange?: (blob: Blob) => Promise<void> | void;
+  onBioSave?: (bio: string) => Promise<void> | void;
 };
 
 const DEFAULT_AVATAR = publicAsset("/avatar-default.svg");
@@ -65,6 +62,7 @@ export default function ProfileCard({
   isEditable = false,
   onAvatarImageChange,
   onBannerImageChange,
+  onBioSave,
 }: ProfileCardProps) {
   const [avatarSrc, setAvatarSrc] = useState(avatarSrcProp ?? DEFAULT_AVATAR);
   const [openFolder, setOpenFolder] = useState<string | null>(null);
@@ -77,6 +75,17 @@ export default function ProfileCard({
   const [showAddFolder, setShowAddFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderVisibility, setNewFolderVisibility] = useState<"public" | "private">("public");
+
+  const [bioDraft, setBioDraft] = useState(bio);
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioSaving, setBioSaving] = useState(false);
+  const [bioError, setBioError] = useState("");
+
+  useEffect(() => {
+    if (!editingBio) {
+      setBioDraft(bio);
+    }
+  }, [bio, editingBio]);
 
   const endCropSession = useCallback(() => {
     setRawImageSrc((prev) => {
@@ -116,6 +125,20 @@ export default function ProfileCard({
       }
     }
     endCropSession();
+  };
+
+  const handleBioSave = async () => {
+    if (!onBioSave) return;
+    setBioError("");
+    setBioSaving(true);
+    try {
+      await Promise.resolve(onBioSave(bioDraft.trim()));
+      setEditingBio(false);
+    } catch (e: unknown) {
+      setBioError(e instanceof Error ? e.message : "Could not save bio");
+    } finally {
+      setBioSaving(false);
+    }
   };
 
   return (
@@ -169,7 +192,65 @@ export default function ProfileCard({
 
         <div className="profile_text_block">
           <h1 className="profile_username">{username}</h1>
-          {bio ? (
+          {onBioSave && isEditable ? (
+            <div className="profile_bio_edit_wrap">
+              {editingBio ? (
+                <>
+                  <textarea
+                    className="profile_bio_textarea"
+                    value={bioDraft}
+                    onChange={(e) => setBioDraft(e.target.value)}
+                    maxLength={500}
+                    rows={4}
+                    placeholder="Tell visitors about your work…"
+                    aria-label="Bio"
+                  />
+                  <div className="profile_bio_actions">
+                    <button
+                      type="button"
+                      className="profile_bio_save_btn"
+                      onClick={() => void handleBioSave()}
+                      disabled={bioSaving}
+                    >
+                      {bioSaving ? "Saving…" : "Save bio"}
+                    </button>
+                    <button
+                      type="button"
+                      className="profile_bio_cancel_btn"
+                      onClick={() => {
+                        setEditingBio(false);
+                        setBioDraft(bio);
+                        setBioError("");
+                      }}
+                      disabled={bioSaving}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {bioError ? (
+                    <p className="profile_bio_error" role="alert">
+                      {bioError}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  {bio ? (
+                    <p className="profile_user_bio">{bio}</p>
+                  ) : (
+                    <p className="profile_user_bio muted">No bio yet.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="profile_bio_edit_btn"
+                    onClick={() => setEditingBio(true)}
+                  >
+                    Edit bio
+                  </button>
+                </>
+              )}
+            </div>
+          ) : bio ? (
             <p className="profile_user_bio">{bio}</p>
           ) : (
             <p className="profile_user_bio muted">No bio yet.</p>

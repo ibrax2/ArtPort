@@ -7,6 +7,7 @@ import QuestionField from "@/components/questions/QuestionField";
 import CheckboxOption from "@/components/questions/CheckboxOption";
 import RadioOption from "@/components/questions/RadioOption";
 import RatingScale from "@/components/questions/RatingScale";
+import FeedbackTextAnswer from "@/components/questions/FeedbackTextAnswer";
 import type {
   FeedbackFormConfig,
   FeedbackQuestion,
@@ -70,7 +71,7 @@ export default function FeedbackFormCard({
   const setText = (id: string, value: string) => {
     setAnswers((prev) => ({
       ...prev,
-      [id]: sanitizeMultilineText(value, TEXT_LIMITS.feedbackText),
+      [id]: sanitizeMultilineText(value, TEXT_LIMITS.feedbackTextAnswer),
     }));
     setSubmitError("");
   };
@@ -266,13 +267,10 @@ export default function FeedbackFormCard({
                     detail={q.detail}
                     required={q.required}
                   >
-                    <textarea
-                      className={styles.textArea}
-                      rows={4}
+                    <FeedbackTextAnswer
                       value={value}
-                      onChange={(ev) => setText(q.id, ev.target.value)}
-                      aria-required={q.required}
-                      maxLength={TEXT_LIMITS.feedbackText}
+                      onChange={(next) => setText(q.id, next)}
+                      required={q.required}
                     />
                   </QuestionField>
                 );

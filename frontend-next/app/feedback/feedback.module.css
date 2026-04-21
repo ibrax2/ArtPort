@@ -4,3 +4,58 @@
   @apply min-h-[calc(100vh-80px)] py-10 px-4;
   background: var(--background, #ffedd8);
 }
+
+.selectFlow {
+  @apply flex flex-col gap-8 w-full max-w-5xl mx-auto;
+}
+
+.templateSection {
+  @apply rounded-3xl border px-5 py-5;
+  border-color: #c9b297;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.templateHeading {
+  @apply text-xl font-semibold text-[#2a241c] m-0 mb-2;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.templateIntro {
+  @apply text-sm text-[#5a4d3f] m-0 mb-4 max-w-prose leading-relaxed;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.templateGrid {
+  @apply grid gap-3 sm:grid-cols-2;
+}
+
+.templateCard {
+  @apply flex flex-col gap-1 text-left rounded-2xl border px-4 py-3 cursor-pointer transition-colors;
+  border-color: #d4b894;
+  background: #fffaf5;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.templateCard:hover {
+  border-color: #9a846a;
+  background: #f5ebe0;
+}
+
+.templateCard:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.templateCardActive {
+  border-color: #9a846a;
+  box-shadow: 0 0 0 2px rgba(154, 132, 106, 0.35);
+  background: #f3e1cf;
+}
+
+.templateName {
+  @apply font-semibold text-[#2a241c] text-sm;
+}
+
+.templateBlurb {
+  @apply text-xs text-[#5a4d3f] leading-snug;
+}

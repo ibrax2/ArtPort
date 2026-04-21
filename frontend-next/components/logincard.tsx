@@ -2,10 +2,9 @@
 
 import { useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/apiClient";
 import { persistAuthSession } from "@/lib/authSession";
 import { sanitizeSingleLineText, TEXT_LIMITS } from "@/lib/textInput";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const USER_STATE_EVENT = "artport-user-updated";
 type FormOnSubmit = NonNullable<ComponentProps<"form">["onSubmit"]>;
 
@@ -33,12 +32,9 @@ const LoginCard: React.FC = () => {
     );
 
     try {
-      const response = await fetch(`${API_URL}/api/users/login`, {
+      const response = await apiFetch("/api/users/login", {
+        auth: false,
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
         body: JSON.stringify({ email: safeEmail, password: safePassword }),
       });
 
@@ -78,12 +74,9 @@ const LoginCard: React.FC = () => {
     );
 
     try {
-      const response = await fetch(`${API_URL}/api/users/register`, {
+      const response = await apiFetch("/api/users/register", {
+        auth: false,
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
         body: JSON.stringify({
           username: safeUsername,
           email: safeEmail,

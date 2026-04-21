@@ -1,6 +1,5 @@
+import { apiFetch } from "@/lib/apiClient";
 import { publicAsset } from "@/lib/paths";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export const FEED_ARTWORK_PLACEHOLDER = publicAsset("/images/artwork_1.jpg");
 export const DEFAULT_ARTIST_AVATAR = publicAsset("/avatar-default.svg");
@@ -162,7 +161,7 @@ export function mapArtworkToProfileItem(
 
 export async function fetchArtworks(): Promise<ApiArtworkCommon[]> {
   try {
-    const res = await fetch(`${API_URL}/api/artworks`);
+    const res = await apiFetch("/api/artworks", { auth: false });
     if (!res.ok) return [];
 
     const data = (await res.json().catch(() => [])) as unknown;
@@ -179,7 +178,9 @@ export async function fetchArtworkForPost(
   if (!id) return null;
 
   try {
-    const res = await fetch(`${API_URL}/api/artworks/${encodeURIComponent(id)}`);
+    const res = await apiFetch(`/api/artworks/${encodeURIComponent(id)}`, {
+      auth: false,
+    });
     if (!res.ok) return null;
 
     const data = (await res.json().catch(() => null)) as unknown;

@@ -4,10 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import UploadCard from "@/components/uploadcard";
-import { getClientAuthToken } from "@/lib/authSession";
+import { apiFetch } from "@/lib/apiClient";
 import { fetchCurrentUser } from "@/lib/currentUserApi";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function UploadPageClient() {
   const router = useRouter();
@@ -27,11 +25,8 @@ export default function UploadPageClient() {
   }, []);
 
   const onUpload = async (formData: FormData) => {
-    const token = getClientAuthToken();
-    const res = await fetch(`${API_URL}/api/artworks`, {
+    const res = await apiFetch("/api/artworks", {
       method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      credentials: "include",
       body: formData,
     });
     const data = (await res.json().catch(() => ({}))) as {

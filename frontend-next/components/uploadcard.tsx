@@ -1,10 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-/**
- * Artwork + square thumbnail upload UI. Sends FormData via optional `onUpload`.
- * Backend wiring: see docs/BACKEND_INTEGRATION.md (pass `onUpload` + `userId` from the upload page).
- */
 import React, { useRef, useState } from "react";
 
 import ImageCropModal from "@/components/profile/ImageCropModal";
@@ -18,7 +14,6 @@ import {
 const ACCEPT_IMAGES =
   "image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/heic,image/heif";
 
-/** ArtIcon feed tiles are square (300×300); only the thumbnail file uses this crop. */
 const THUMB_ASPECT = 1;
 
 export type UploadCardProps = {
@@ -29,16 +24,13 @@ export type UploadCardProps = {
 export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
-  /** Object URL for the full file — shown in the main preview (never cropped). */
   const [artworkDisplayUrl, setArtworkDisplayUrl] = useState("");
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
-  /** JPEG data URL of the square crop — shown in the thumbnail preview below */
   const [thumbnailDisplayUrl, setThumbnailDisplayUrl] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  /** True when re-cropping thumbnail only — cancel must not remove the artwork */
   const [adjustingThumbnail, setAdjustingThumbnail] = useState(false);
 
   const fullImageUrlRef = useRef<string | null>(null);
@@ -132,6 +124,10 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
     if (!onUpload) {
       return;
     }
+    if (!userId) {
+      setSubmitError("Your account is still loading. Wait a moment and try again.");
+      return;
+    }
     const safeTitle = sanitizeSingleLineText(
       title,
       TEXT_LIMITS.artworkTitle
@@ -175,7 +171,11 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
   };
 
   const canSubmit = Boolean(
-    selectedFile && thumbnailBlob && title.trim().length > 0 && onUpload
+    selectedFile &&
+      thumbnailBlob &&
+      title.trim().length > 0 &&
+      onUpload &&
+      userId
   );
 
   return (
@@ -306,6 +306,12 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
       {submitError ? (
         <p className="upload-submit-error" role="alert">
           {submitError}
+        </p>
+      ) : null}
+
+      {onUpload && !userId ? (
+        <p className="upload-account-wait" role="status">
+          Loading your account before upload…
         </p>
       ) : null}
 

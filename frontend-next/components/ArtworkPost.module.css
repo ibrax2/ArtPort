@@ -181,74 +181,6 @@
   color: #4b5563;
 }
 
-.responseCard {
-  background: #fff7ed;
-  border: 1px solid #d4b894;
-  border-radius: 8px;
-  padding: 12px;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.responseCard + .responseCard {
-  margin-top: 12px;
-}
-
-.responseMeta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 8px;
-  flex-wrap: wrap;
-}
-
-.responseUser,
-.responseDate,
-.responseQuestion,
-.responseValue {
-  font-family: 'Inter', sans-serif;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.responseUser {
-  margin: 0;
-  font-size: 13px;
-  color: #111827;
-}
-
-.responseDate {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.responseAnswers {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.responseAnswerRow {
-  background: #ffffff;
-  border-radius: 6px;
-  padding: 8px 10px;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-.responseQuestion {
-  margin: 0 0 4px;
-  font-size: 13px;
-  color: #374151;
-}
-
-.responseValue {
-  margin: 0;
-  font-size: 14px;
-  color: #111827;
-}
-
 /* Caption frame */
 .captionFrame {
   width: 100%;
@@ -305,6 +237,14 @@
   line-height: 17px;
 }
 
+/* Feedback + owner delete */
+.feedbackActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
 /* Feedback button */
 .feedbackButton {
   width: 150px;
@@ -322,4 +262,27 @@
 
 .feedbackButton:hover {
   background: #e08e30;
+}
+
+.deletePostButton {
+  min-height: 36px;
+  padding: 0 14px;
+  background: transparent;
+  border: 2px solid #b91c1c;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #b91c1c;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.deletePostButton:hover {
+  background: rgba(185, 28, 28, 0.08);
+}
+
+.deletePostButton:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
 }

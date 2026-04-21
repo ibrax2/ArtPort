@@ -160,6 +160,86 @@
   opacity: 0.55;
 }
 
+.profile_bio_edit_wrap {
+  margin-top: 0.5rem;
+  max-width: 359px;
+}
+
+.profile_bio_textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid #b8b8b8;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.profile_bio_textarea:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.profile_bio_actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.profile_bio_save_btn,
+.profile_bio_cancel_btn,
+.profile_bio_edit_btn {
+  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+}
+
+.profile_bio_edit_btn {
+  margin-top: 0.35rem;
+  border: 1px solid #888;
+  background: #fff;
+  color: #111;
+}
+
+.profile_bio_edit_btn:hover {
+  background: #f3f3f3;
+}
+
+.profile_bio_save_btn {
+  border: none;
+  background: #2563eb;
+  color: #fff;
+}
+
+.profile_bio_save_btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.profile_bio_save_btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile_bio_cancel_btn {
+  border: 1px solid #ccc;
+  background: #fafafa;
+  color: #333;
+}
+
+.profile_bio_error {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #b91c1c;
+  font-family: var(--font-geist-sans), Inter, system-ui, sans-serif;
+}
+
 .profile_stats_col {
   flex-shrink: 0;
   display: flex;

@@ -40,6 +40,13 @@
       ]
     },
     {
+      "id": "short_comment",
+      "type": "text",
+      "label": "In a few words, what mood does this piece give you?",
+      "detail": "Keep it brief — answers are limited to 140 characters.",
+      "required": false
+    },
+    {
       "id": "improvement_focus",
       "type": "radio",
       "label": "What is the first feature of the artwork that stood out to you?",

@@ -1,14 +1,5 @@
-/**
- * Search API — maps backend `/api/search/*` responses to UI result items.
- * Env: NEXT_PUBLIC_API_URL. Backend routes (reference): GET /api/search/users, GET /api/search/artworks
- *
- * This helper never throws: if the backend is down, CORS blocks, or the response is not OK,
- * it returns an empty array so the search bar stays usable in frontend-only mode.
- */
+import { apiFetch } from "@/lib/apiClient";
 import { resolveApiAssetUrl } from "@/lib/artworkApi";
-import { getClientAuthToken } from "@/lib/authSession";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export type SearchResultArtist = {
   id: string;
@@ -51,10 +42,6 @@ type ApiArtworkHit = {
   userDetails?: { username?: string; profilePictureUrl?: string };
 };
 
-/**
- * Fetches search results from the backend. `filter` matches SearchBar UI: "Title" | "Artist".
- * Never throws — returns [] when the request fails or the backend is unavailable.
- */
 export async function fetchSearchResults(
   query: string,
   filter: string
@@ -63,16 +50,12 @@ export async function fetchSearchResults(
   if (!q) return [];
 
   try {
-    const token = getClientAuthToken();
-    const headers: HeadersInit = {};
-    if (token) headers.Authorization = `Bearer ${token}`;
-
     const isArtist = filter.toLowerCase() === "artist";
-    const url = isArtist
-      ? `${API_URL}/api/search/users?query=${encodeURIComponent(q)}`
-      : `${API_URL}/api/search/artworks?query=${encodeURIComponent(q)}`;
+    const path = isArtist
+      ? `/api/search/users?query=${encodeURIComponent(q)}`
+      : `/api/search/artworks?query=${encodeURIComponent(q)}`;
 
-    const res = await fetch(url, { headers, credentials: "include" });
+    const res = await apiFetch(path, { auth: true });
 
     const data = (await res.json().catch(() => ({}))) as {
       message?: string;

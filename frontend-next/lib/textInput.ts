@@ -8,6 +8,9 @@ export const TEXT_LIMITS = {
   searchQuery: 120,
   artworkTitle: 120,
   artworkDescription: 1000,
+  feedbackTextAnswer: 140,
+  feedbackQuestionLabel: 500,
+  feedbackQuestionHelp: 2000,
   feedbackText: 1000,
 } as const;
 

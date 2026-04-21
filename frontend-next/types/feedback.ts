@@ -41,7 +41,6 @@ export type FeedbackFormConfig = {
   schemaVersion: number;
   title: string;
   description?: string;
-  /** Copy for /feedback/select (optional; falls back if omitted) */
   selectPageTitle?: string;
   selectPageHint?: string;
   questions: FeedbackQuestion[];

@@ -5,6 +5,7 @@ import React, { useState } from "react";
 
 import styles from "./ArtworkPost.module.css";
 import FeedbackFormCard from "@/components/feedback/FeedbackFormCard";
+import FeedbackResponsesSummary from "@/components/feedback/FeedbackResponsesSummary";
 import type { ApiFeedbackResponseQuestion } from "@/lib/feedbackApi";
 import type { FeedbackFormConfig } from "@/types/feedback";
 
@@ -19,6 +20,8 @@ interface ArtworkPostProps {
   feedbackFormId?: string;
   isOwnerArtwork?: boolean;
   isAuthenticated?: boolean;
+  onDeletePost?: () => void;
+  showDeletePost?: boolean;
   receivedResponses?: {
     _id: string;
     userId: string;
@@ -27,27 +30,6 @@ interface ArtworkPostProps {
     form: { questions: ApiFeedbackResponseQuestion[] };
   }[];
   otherPosts?: { id: string; imageSrc: string; title: string }[];
-}
-
-function responseValue(question: ApiFeedbackResponseQuestion): string {
-  if (typeof question.textValue === "string" && question.textValue.trim()) {
-    return question.textValue.trim();
-  }
-
-  if (typeof question.ratingSelection === "number") {
-    return String(question.ratingSelection);
-  }
-
-  const selected = question.options
-    .filter((option) => option.selected)
-    .map((option) => option.option.trim())
-    .filter(Boolean);
-
-  if (selected.length > 0) {
-    return selected.join(", ");
-  }
-
-  return "No answer";
 }
 
 export default function ArtworkPost({
@@ -61,14 +43,18 @@ export default function ArtworkPost({
   feedbackFormId,
   isOwnerArtwork = false,
   isAuthenticated = true,
+  onDeletePost,
+  showDeletePost = false,
   receivedResponses = [],
   otherPosts = [],
 }: ArtworkPostProps) {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const canInteract = isAuthenticated;
   const hasFeedbackForm = Boolean(feedbackConfig && feedbackFormId);
-  const buttonOpenLabel = isOwnerArtwork ? "View Responses" : "Leave Feedback";
-  const buttonCloseLabel = isOwnerArtwork ? "Close Responses" : "Close Feedback";
+  const buttonOpenLabel = isOwnerArtwork
+    ? "Feedback summary"
+    : "Leave Feedback";
+  const buttonCloseLabel = isOwnerArtwork ? "Close summary" : "Close Feedback";
 
   const feedbackButton = canInteract ? (
     <button
@@ -99,6 +85,26 @@ export default function ArtworkPost({
             <div className={!canInteract ? styles.captionFrameLockedContent : ""}>
               <h1 className={styles.artworkTitle}>{title}</h1>
               <p className={styles.description}>{description}</p>
+              {canInteract ? (
+                <div className={styles.feedbackActions}>
+                  <button
+                    className={styles.feedbackButton}
+                    onClick={() => setFeedbackOpen(!feedbackOpen)}
+                    disabled={!hasFeedbackForm && !isOwnerArtwork}
+                  >
+                    {feedbackOpen ? buttonCloseLabel : buttonOpenLabel}
+                  </button>
+                  {showDeletePost && onDeletePost ? (
+                    <button
+                      type="button"
+                      className={styles.deletePostButton}
+                      onClick={onDeletePost}
+                    >
+                      Remove from my gallery
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
             {!canInteract ? (
               <Link href="/login" className={styles.captionLoginMessage}>
@@ -182,31 +188,10 @@ export default function ArtworkPost({
                 {receivedResponses.length === 0 ? (
                   <p className={styles.emptyResponses}>No responses yet from other users.</p>
                 ) : (
-                  receivedResponses.map((response) => (
-                    <article key={response._id} className={styles.responseCard}>
-                      <div className={styles.responseMeta}>
-                        <span className={styles.responseUser}>
-                          User: {response.username || response.userId}
-                        </span>
-                        {response.createdAt ? (
-                          <span className={styles.responseDate}>
-                            {new Date(response.createdAt).toLocaleString()}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className={styles.responseAnswers}>
-                        {response.form.questions
-                          .slice()
-                          .sort((a, b) => a.order - b.order)
-                          .map((question) => (
-                            <div key={question._id} className={styles.responseAnswerRow}>
-                              <p className={styles.responseQuestion}>{question.question}</p>
-                              <p className={styles.responseValue}>{responseValue(question)}</p>
-                            </div>
-                          ))}
-                      </div>
-                    </article>
-                  ))
+                  <FeedbackResponsesSummary
+                    responses={receivedResponses}
+                    feedbackConfig={feedbackConfig}
+                  />
                 )}
               </div>
             ) : hasFeedbackForm && feedbackConfig ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import ArtworkPost from "@/components/ArtworkPost";
 import {
@@ -24,6 +25,7 @@ import {
 } from "@/lib/feedbackApi";
 import { getClientAuthToken } from "@/lib/authSession";
 import { fetchCurrentUser } from "@/lib/currentUserApi";
+import { hideArtworkFromGallery, isArtworkHidden } from "@/lib/hiddenArtworkIds";
 import type { FeedbackFormConfig } from "@/types/feedback";
 
 type Props = {
@@ -31,6 +33,7 @@ type Props = {
 };
 
 export default function PostPageClient({ segment }: Props) {
+  const router = useRouter();
   const [artwork, setArtwork] = useState<ApiArtworkDetail | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -129,6 +132,13 @@ export default function PostPageClient({ segment }: Props) {
     };
   }, [segment]);
 
+  useEffect(() => {
+    if (!artwork?._id || !isOwnerArtwork) return;
+    if (isArtworkHidden(String(artwork._id))) {
+      router.replace("/me");
+    }
+  }, [artwork?._id, isOwnerArtwork, router]);
+
   if (loading) {
     return (
       <p style={{ padding: 24, fontFamily: "Inter, sans-serif" }}>Loading…</p>
@@ -172,6 +182,19 @@ export default function PostPageClient({ segment }: Props) {
       feedbackFormId={feedbackFormId ?? undefined}
       isOwnerArtwork={isOwnerArtwork}
       isAuthenticated={isAuthenticated}
+      showDeletePost={isOwnerArtwork}
+      onDeletePost={() => {
+        if (!artwork?._id) return;
+        if (
+          !confirm(
+            "Remove this post from your gallery on this device? (There is no delete API yet—this only hides it in your browser.)"
+          )
+        ) {
+          return;
+        }
+        hideArtworkFromGallery(String(artwork._id));
+        router.push("/me");
+      }}
       receivedResponses={receivedResponses}
       otherPosts={otherPosts}
     />

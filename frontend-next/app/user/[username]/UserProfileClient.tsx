@@ -11,10 +11,9 @@ import {
   fetchArtworks,
   mapArtworkToProfileItem,
 } from "@/lib/artworkApi";
+import { apiFetch } from "@/lib/apiClient";
 import { getClientAuthToken } from "@/lib/authSession";
 import { fetchCurrentUser } from "@/lib/currentUserApi";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 type ApiUserProfile = {
   _id?: string;
@@ -32,6 +31,7 @@ export default function UserProfileClient({
 }) {
   const router = useRouter();
   const [username, setUsername] = useState(usernameParam || "Artist");
+  const [bio, setBio] = useState("");
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(undefined);
   const [bannerPictureUrl, setBannerPictureUrl] = useState<string | undefined>(undefined);
@@ -66,11 +66,14 @@ export default function UserProfileClient({
   useEffect(() => {
     let cancelled = false;
 
-    fetch(`${API_URL}/api/users/by-username/${encodeURIComponent(usernameParam)}`)
+    apiFetch(`/api/users/by-username/${encodeURIComponent(usernameParam)}`, {
+      auth: false,
+    })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: ApiUserProfile | null) => {
         if (cancelled || !data) return;
         if (data.username) setUsername(data.username);
+        if (typeof data.bio === "string") setBio(data.bio);
         if (data._id) {
           setUserId(String(data._id));
         }
@@ -120,7 +123,7 @@ export default function UserProfileClient({
         username={username}
         avatarSrc={profilePictureUrl}
         bannerSrc={bannerPictureUrl}
-        bio="Welcome to their ArtPort profile."
+        bio={bio}
         followers={0}
         following={0}
         posts={postCount}
