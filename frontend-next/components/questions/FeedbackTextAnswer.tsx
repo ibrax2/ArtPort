@@ -23,7 +23,7 @@ export default function FeedbackTextAnswer({
   id,
   value,
   onChange,
-  maxLength = TEXT_LIMITS.feedbackTextAnswer,
+  maxLength = TEXT_LIMITS.feedbackText,
   rows = 3,
   required = false,
   disabled = false,
