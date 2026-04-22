@@ -1,9 +1,6 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-/**
- * Profile header, avatar/banner crop, posts grid. Cropped images are passed as Blob to optional callbacks.
- * Backend wiring: see docs/BACKEND_INTEGRATION.md (pass `onAvatarImageChange` / `onBannerImageChange` from /me page).
- */
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import ImageCropModal from "@/components/profile/ImageCropModal";
@@ -29,6 +26,7 @@ export type ProfileCardProps = {
   isEditable?: boolean;
   onAvatarImageChange?: (blob: Blob) => Promise<void> | void;
   onBannerImageChange?: (blob: Blob) => Promise<void> | void;
+  onBioSave?: (bio: string) => Promise<void> | void;
 };
 
 const DEFAULT_AVATAR = publicAsset("/avatar-default.svg");
@@ -64,27 +62,30 @@ export default function ProfileCard({
   isEditable = false,
   onAvatarImageChange,
   onBannerImageChange,
+  onBioSave,
 }: ProfileCardProps) {
-  const [avatarSrc, setAvatarSrc] = useState(
-    avatarSrcProp ?? DEFAULT_AVATAR
-  );
-  const [bannerSrc, setBannerSrc] = useState<string | null>(
-    bannerSrcProp ?? null
-  );
+  const [avatarSrc, setAvatarSrc] = useState(avatarSrcProp ?? DEFAULT_AVATAR);
+  const [openFolder, setOpenFolder] = useState<string | null>(null);
+  const [bannerSrc, setBannerSrc] = useState<string | null>(bannerSrcProp ?? null);
   const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
   const [cropMode, setCropMode] = useState<"avatar" | "banner" | null>(null);
-  const [pendingTarget, setPendingTarget] = useState<
-    "avatar" | "banner" | null
-  >(null);
+  const [pendingTarget, setPendingTarget] = useState<"avatar" | "banner" | null>(null);
+  const [activeTab, setActiveTab] = useState<"posts" | "collections">("posts");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showAddFolder, setShowAddFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderVisibility, setNewFolderVisibility] = useState<"public" | "private">("public");
+
+  const [bioDraft, setBioDraft] = useState(bio);
+  const [editingBio, setEditingBio] = useState(false);
+  const [bioSaving, setBioSaving] = useState(false);
+  const [bioError, setBioError] = useState("");
 
   useEffect(() => {
-    setAvatarSrc(avatarSrcProp ?? DEFAULT_AVATAR);
-  }, [avatarSrcProp]);
-
-  useEffect(() => {
-    setBannerSrc(bannerSrcProp ?? null);
-  }, [bannerSrcProp]);
+    if (!editingBio) {
+      setBioDraft(bio);
+    }
+  }, [bio, editingBio]);
 
   const endCropSession = useCallback(() => {
     setRawImageSrc((prev) => {
@@ -115,17 +116,29 @@ export default function ProfileCard({
     if (cropMode === "avatar") {
       setAvatarSrc(dataUrl);
       if (blob && onAvatarImageChange) {
-        Promise.resolve(onAvatarImageChange(blob)).catch(() => {
-        });
+        Promise.resolve(onAvatarImageChange(blob)).catch(() => { });
       }
     } else if (cropMode === "banner") {
       setBannerSrc(dataUrl);
       if (blob && onBannerImageChange) {
-        Promise.resolve(onBannerImageChange(blob)).catch(() => {
-        });
+        Promise.resolve(onBannerImageChange(blob)).catch(() => { });
       }
     }
     endCropSession();
+  };
+
+  const handleBioSave = async () => {
+    if (!onBioSave) return;
+    setBioError("");
+    setBioSaving(true);
+    try {
+      await Promise.resolve(onBioSave(bioDraft.trim()));
+      setEditingBio(false);
+    } catch (e: unknown) {
+      setBioError(e instanceof Error ? e.message : "Could not save bio");
+    } finally {
+      setBioSaving(false);
+    }
   };
 
   return (
@@ -142,11 +155,7 @@ export default function ProfileCard({
 
       <div className="banner_container">
         {bannerSrc ? (
-          <img
-            src={bannerSrc}
-            alt=""
-            className="banner_image"
-          />
+          <img src={bannerSrc} alt="" className="banner_image" />
         ) : null}
         {isEditable && (
           <button
@@ -183,7 +192,65 @@ export default function ProfileCard({
 
         <div className="profile_text_block">
           <h1 className="profile_username">{username}</h1>
-          {bio ? (
+          {onBioSave && isEditable ? (
+            <div className="profile_bio_edit_wrap">
+              {editingBio ? (
+                <>
+                  <textarea
+                    className="profile_bio_textarea"
+                    value={bioDraft}
+                    onChange={(e) => setBioDraft(e.target.value)}
+                    maxLength={500}
+                    rows={4}
+                    placeholder="Tell visitors about your work…"
+                    aria-label="Bio"
+                  />
+                  <div className="profile_bio_actions">
+                    <button
+                      type="button"
+                      className="profile_bio_save_btn"
+                      onClick={() => void handleBioSave()}
+                      disabled={bioSaving}
+                    >
+                      {bioSaving ? "Saving…" : "Save bio"}
+                    </button>
+                    <button
+                      type="button"
+                      className="profile_bio_cancel_btn"
+                      onClick={() => {
+                        setEditingBio(false);
+                        setBioDraft(bio);
+                        setBioError("");
+                      }}
+                      disabled={bioSaving}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  {bioError ? (
+                    <p className="profile_bio_error" role="alert">
+                      {bioError}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  {bio ? (
+                    <p className="profile_user_bio">{bio}</p>
+                  ) : (
+                    <p className="profile_user_bio muted">No bio yet.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="profile_bio_edit_btn"
+                    onClick={() => setEditingBio(true)}
+                  >
+                    Edit bio
+                  </button>
+                </>
+              )}
+            </div>
+          ) : bio ? (
             <p className="profile_user_bio">{bio}</p>
           ) : (
             <p className="profile_user_bio muted">No bio yet.</p>
@@ -198,12 +265,54 @@ export default function ProfileCard({
       </div>
 
       <div className="separation">
-        <div className="folder_row">
-          <Folder label="Portfolio" />
-          <Folder label="Archive" />
+        {/* Tab Bar */}
+        <div className="tab_bar">
+          <button
+            className={`tab_btn ${activeTab === "posts" ? "tab_btn_active" : ""}`}
+            onClick={() => setActiveTab("posts")}
+          >
+            Posts
+          </button>
+          <button
+            className={`tab_btn ${activeTab === "collections" ? "tab_btn_active" : ""}`}
+            onClick={() => setActiveTab("collections")}
+          >
+            Collections
+          </button>
+          {activeTab === "collections" && !openFolder && (
+            <button
+              className="add_folder_btn"
+              type="button"
+              aria-label="Add folder"
+              onClick={() => setShowAddFolder(true)}
+            >
+              +
+            </button>
+          )}
         </div>
-        <div className="profile_posts_section">
-          <ProfilePostsGrid posts={userPosts} username={username} />
+
+        {/* Tab Content */}
+        <div className="tab_content">
+          {activeTab === "posts" ? (
+            <ProfilePostsGrid posts={userPosts} username={username} />
+          ) : openFolder ? (
+            <div className="folder_contents">
+              <button
+                className="folder_back_btn"
+                onClick={() => setOpenFolder(null)}
+                type="button"
+              >
+                ← Back to Collections
+              </button>
+              <h3 className="folder_contents_title">{openFolder}</h3>
+              <p className="folder_contents_empty">This folder is empty.</p>
+            </div>
+          ) : (
+            <div className="folder_row">
+              <Folder label="Portfolio" onClick={() => setOpenFolder("Portfolio")} />
+              <Folder label="Archive" onClick={() => setOpenFolder("Archive")} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -212,15 +321,81 @@ export default function ProfileCard({
           imageSrc={rawImageSrc}
           aspect={cropMode === "banner" ? BANNER_ASPECT : 1}
           cropShape={cropMode === "avatar" ? "round" : "rect"}
-          title={
-            cropMode === "banner"
-              ? "Adjust banner"
-              : "Adjust profile photo"
-          }
+          title={cropMode === "banner" ? "Adjust banner" : "Adjust profile photo"}
           onApply={applyCrop}
           onCancel={endCropSession}
         />
       ) : null}
+      {showAddFolder && (
+        <div className="modal_overlay" onClick={() => setShowAddFolder(false)}>
+          <div className="modal_box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal_title">New Folder</h3>
+
+            <label className="modal_label" htmlFor="folder_name_input">
+              Folder name
+            </label>
+            <input
+              id="folder_name_input"
+              className="modal_input"
+              type="text"
+              placeholder="e.g. Sketchbook"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              autoFocus
+            />
+
+            <div className="modal_radio_group">
+              <label className="modal_radio_label">
+                <input
+                  type="radio"
+                  name="folder_visibility"
+                  value="public"
+                  checked={newFolderVisibility === "public"}
+                  onChange={() => setNewFolderVisibility("public")}
+                />
+                Public
+              </label>
+              <label className="modal_radio_label">
+                <input
+                  type="radio"
+                  name="folder_visibility"
+                  value="private"
+                  checked={newFolderVisibility === "private"}
+                  onChange={() => setNewFolderVisibility("private")}
+                />
+                Private
+              </label>
+            </div>
+
+            <div className="modal_actions">
+              <button
+                className="modal_cancel_btn"
+                type="button"
+                onClick={() => {
+                  setShowAddFolder(false);
+                  setNewFolderName("");
+                  setNewFolderVisibility("public");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal_add_btn"
+                type="button"
+                disabled={!newFolderName.trim()}
+                onClick={() => {
+                  // TODO: wire up to backend
+                  setShowAddFolder(false);
+                  setNewFolderName("");
+                  setNewFolderVisibility("public");
+                }}
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

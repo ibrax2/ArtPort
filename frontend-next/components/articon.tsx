@@ -1,4 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
+
+import Link from "next/link";
 
 type Post = {
   id: string;
@@ -10,7 +13,7 @@ type Post = {
 
 export default function ArtIcon({ post }: { post: Post }) {
   return (
-    <div className="articon-container">
+    <Link href={`/post/${encodeURIComponent(post.id)}`} className="articon-container">
       <img
         src={post.image}
         alt={post.title}
@@ -24,11 +27,11 @@ export default function ArtIcon({ post }: { post: Post }) {
             alt=""
             className="articon-avatar"
           />
-          <span className="articon-username">{post.username}</span>
+          <span className="articon-username">by {post.username}</span>
         </div>
 
         <div className="articon-title">{post.title}</div>
       </div>
-    </div>
+    </Link>
   );
 }

@@ -29,7 +29,11 @@ export default function RatingScale({
     steps.push(n);
   }
 
-  if (stepLabels && stepLabels.length !== steps.length) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    stepLabels &&
+    stepLabels.length !== steps.length
+  ) {
     console.warn(
       "RatingScale: stepLabels length should match the number of steps (max - min + 1)."
     );

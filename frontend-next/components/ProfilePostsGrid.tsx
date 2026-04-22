@@ -1,4 +1,5 @@
 import styles from "./ProfilePostsGrid.module.css";
+import Link from "next/link";
 
 export type ProfilePostItem = {
   id: string;
@@ -20,22 +21,23 @@ export default function ProfilePostsGrid({
       className={styles.section}
       aria-label={`Posts by ${username}`}
     >
-      <h2 className={styles.heading}>Your posts</h2>
       {posts.length === 0 ? (
         <p className={styles.empty}>No uploads yet.</p>
       ) : (
         <ul className={styles.grid}>
           {posts.map((p) => (
             <li key={p.id} className={styles.card}>
-              <div className={styles.thumbWrap}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- API URLs / mixed sources */}
-                <img
-                  src={p.imageSrc}
-                  alt=""
-                  className={styles.thumb}
-                />
-              </div>
-              <p className={styles.title}>{p.title}</p>
+              <Link href={`/post/${encodeURIComponent(p.id)}`}>
+                <div className={styles.thumbWrap}>
+                  {/* eslint-disable-next-line @next/next/no-img-element -- API URLs / mixed sources */}
+                  <img
+                    src={p.imageSrc}
+                    alt=""
+                    className={styles.thumb}
+                  />
+                </div>
+                <p className={styles.title}>{p.title}</p>
+              </Link>
             </li>
           ))}
         </ul>

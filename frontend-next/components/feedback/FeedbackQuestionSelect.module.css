@@ -120,3 +120,106 @@
   outline: 2px solid #215a80;
   outline-offset: 2px;
 }
+
+.customBuilder {
+  @apply w-full max-w-4xl mx-auto mb-8 rounded-[24px] border px-5 py-5;
+  border-color: #c9b297;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.customBuilderTitle {
+  @apply text-lg font-semibold text-[#2a241c] m-0 mb-2;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.customBuilderHint {
+  @apply text-sm text-[#5a4d3f] m-0 mb-4 leading-relaxed;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.customBuilderFields {
+  @apply flex flex-col gap-4;
+}
+
+.fieldLabel {
+  @apply flex flex-col gap-1.5 text-sm font-medium text-[#2a241c];
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.optionalMark {
+  @apply font-normal text-[#5a4d3f];
+}
+
+.fieldInput {
+  @apply rounded-xl border px-3 py-2 text-sm text-[#2a241c] font-normal;
+  border-color: #c9b297;
+  background: #fffaf5;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.fieldInput:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.fieldTextarea {
+  @apply rounded-xl border px-3 py-2 text-sm text-[#2a241c] font-normal resize-y min-h-[4.5rem];
+  border-color: #c9b297;
+  background: #fffaf5;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.fieldTextarea:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.requiredRow {
+  @apply flex items-center gap-2 text-sm text-[#2a241c] cursor-pointer select-none;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.requiredCheckbox {
+  @apply h-4 w-4 accent-[#9a846a];
+}
+
+.secondaryBtn {
+  @apply self-start px-4 py-2 rounded-xl text-sm font-medium cursor-pointer border;
+  border-color: #9a846a;
+  background: transparent;
+  color: #2a241c;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.secondaryBtn:hover {
+  background: rgba(154, 132, 106, 0.15);
+}
+
+.secondaryBtn:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.removeCol {
+  @apply flex shrink-0 items-start pt-1;
+}
+
+.removeBtn {
+  @apply text-sm font-medium cursor-pointer border-0 bg-transparent underline underline-offset-2;
+  color: #7c2d12;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.removeBtn:hover {
+  color: #9a3412;
+}
+
+.removeBtn:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.previewTextHint {
+  @apply text-xs text-[#5a4d3f] m-0 mt-1;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}

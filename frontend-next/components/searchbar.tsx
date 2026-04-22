@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import {
   useState,
@@ -10,25 +11,17 @@ import {
 
 import { publicAsset } from "@/lib/paths";
 import type { SearchResultItem } from "@/lib/searchApi";
+import { sanitizeSingleLineText, TEXT_LIMITS } from "@/lib/textInput";
 
 export type SearchBarProps = {
   placeholder?: string;
   onSearch?: (query: string, filter: string) => void;
-  /** Legacy: parent-owned results when not using `loadResults`. */
   results?: SearchResultItem[];
   onSelectResult?: (item: SearchResultItem) => void;
-  /** If set, debounced fetch while typing (backend integration). */
   loadResults?: (query: string, filter: string) => Promise<SearchResultItem[]>;
   debounceMs?: number;
 };
 
-/**
- * Search bar — presentation + optional backend wiring.
- *
- * Modes:
- * - **Remote (recommended):** pass `loadResults={fetchSearchResults}` from `lib/searchApi.ts`.
- * - **Controlled:** pass `results` and handle `onSearch` yourself (legacy).
- */
 export default function SearchBar({
   placeholder = "Search",
   onSearch = () => {},
@@ -133,10 +126,15 @@ export default function SearchBar({
         className="search-input"
         placeholder={placeholder}
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) =>
+          setQuery(
+            sanitizeSingleLineText(e.target.value, TEXT_LIMITS.searchQuery)
+          )
+        }
         onKeyDown={handleEnter}
         autoComplete="off"
         aria-label={placeholder}
+        maxLength={TEXT_LIMITS.searchQuery}
       />
 
       <div
@@ -165,6 +163,7 @@ export default function SearchBar({
                 key={opt}
                 className="option"
                 role="option"
+                aria-selected={filter === opt}
                 onClick={() => {
                   setFilter(opt);
                   setOpen(false);

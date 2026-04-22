@@ -15,7 +15,9 @@ export default function LayoutShell({
   return (
     <>
       {!hideNavbar ? <Navbar /> : null}
-      {children}
+      <main style={{ paddingTop: !hideNavbar ? '60px' : '0' }}>
+        {children}
+      </main>
     </>
   );
 }

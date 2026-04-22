@@ -2,6 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  clearAuthSession,
+  getClientAuthToken,
+  setAuthTokenCookie,
+} from "@/lib/authSession";
 
 type StoredUser = {
   _id?: string;
@@ -20,6 +25,26 @@ function isJwtExpired(token: string): boolean {
   }
 }
 
+export function getAuthenticatedUserIdFromStorage(): string | null {
+  try {
+    const token = getClientAuthToken();
+    const rawUser = localStorage.getItem("user");
+
+    if (!token || !rawUser || isJwtExpired(token)) {
+      return null;
+    }
+
+    const user = JSON.parse(rawUser) as StoredUser;
+    if (!user._id) {
+      return null;
+    }
+
+    return String(user._id);
+  } catch {
+    return null;
+  }
+}
+
 export default function RequireAuth({
   children,
 }: {
@@ -30,31 +55,36 @@ export default function RequireAuth({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let shouldRedirect = false;
+    const timeoutId = window.setTimeout(() => {
+      let shouldRedirect = false;
 
-    const token = localStorage.getItem("token");
-    const rawUser = localStorage.getItem("user");
+      const token = getClientAuthToken();
+      const rawUser = localStorage.getItem("user");
 
-    if (!token || !rawUser) {
-      shouldRedirect = true;
-    } else {
-      const user = JSON.parse(rawUser) as StoredUser;
-      if (!user._id || isJwtExpired(token)) {
+      if (!token || !rawUser) {
         shouldRedirect = true;
+      } else {
+        const user = JSON.parse(rawUser) as StoredUser;
+        if (!user._id || isJwtExpired(token)) {
+          shouldRedirect = true;
+        } else {
+          setAuthTokenCookie(token);
+        }
       }
-    }
 
-    if (shouldRedirect) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      setIsAuthed(false);
+      if (shouldRedirect) {
+        clearAuthSession();
+        setIsAuthed(false);
+        setIsLoading(false);
+        router.replace("/login");
+        return;
+      }
+
+      setIsAuthed(true);
       setIsLoading(false);
-      router.replace("/login");
-      return;
-    }
+    }, 0);
 
-    setIsAuthed(true);
-    setIsLoading(false);
+    return () => window.clearTimeout(timeoutId);
   }, [router]);
 
   if (isLoading) {

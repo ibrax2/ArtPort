@@ -9,7 +9,7 @@ export const getArtworks = async (req, res) => {
   try {
     const artworks = await Artwork.find().populate(
       "userId",
-      "username profilePictureUrl",
+      "_id username profilePictureUrl",
     );
     res.json(artworks.map((artwork) => withMediaDeliveryUrls(artwork)));
   } catch (error) {
@@ -56,7 +56,14 @@ export const createArtwork = async (req, res) => {
     });
 
     const createdArtwork = await artwork.save();
-    res.status(201).json(withMediaDeliveryUrls(createdArtwork));
+    const populatedArtwork =
+      typeof createdArtwork.populate === "function"
+        ? await createdArtwork.populate(
+            "userId",
+            "_id username profilePictureUrl",
+          )
+        : createdArtwork;
+    res.status(201).json(withMediaDeliveryUrls(populatedArtwork));
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -69,7 +76,7 @@ export const getArtworkById = async (req, res) => {
   try {
     const artwork = await Artwork.findById(req.params.id).populate(
       "userId",
-      "username profilePictureUrl",
+      "_id username profilePictureUrl",
     );
 
     if (artwork) {

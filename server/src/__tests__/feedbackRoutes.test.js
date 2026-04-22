@@ -240,7 +240,7 @@ describe("FeedbackForm and Response API routes", () => {
     const ratingQ = form.questions.find((q) => q.order === 3);
 
     const responsePayload = {
-      feedbackFormID: form._id,
+      feedbackFormId: form._id,
       answers: [
         {
           questionId: singleMcq._id,
@@ -297,7 +297,7 @@ describe("FeedbackForm and Response API routes", () => {
       .post("/api/response")
       .set(makeAuthHeader(token))
       .send({
-        feedbackFormID: form._id,
+        feedbackFormId: form._id,
         answers: [
           {
             questionId: singleMcq._id,
@@ -326,7 +326,7 @@ describe("FeedbackForm and Response API routes", () => {
     const singleMcq = form.questions.find((q) => q.order === 1);
 
     const payload = {
-      feedbackFormID: form._id,
+      feedbackFormId: form._id,
       answers: [
         {
           questionId: singleMcq._id,
@@ -382,7 +382,7 @@ describe("FeedbackForm and Response API routes", () => {
     ).body;
 
     const answerFor = (form) => ({
-      feedbackFormID: form._id,
+      feedbackFormId: form._id,
       answers: [
         {
           questionId: form.questions.find((q) => q.order === 1)._id,
@@ -403,6 +403,10 @@ describe("FeedbackForm and Response API routes", () => {
       .post("/api/response")
       .set(makeAuthHeader(tokenB))
       .send(answerFor(formB));
+    await request(app)
+      .post("/api/response")
+      .set(makeAuthHeader(tokenB))
+      .send(answerFor(formA1));
 
     const listRes = await request(app)
       .get("/api/response")
@@ -421,6 +425,21 @@ describe("FeedbackForm and Response API routes", () => {
     expect(filteredRes.status).toBe(200);
     expect(filteredRes.body).toHaveLength(1);
     expect(filteredRes.body[0].feedbackId).toBe(formA1._id);
+
+    const ownerReceivedRes = await request(app)
+      .get(`/api/response?feedbackFormId=${formA1._id}&ownerView=true`)
+      .set(makeAuthHeader(tokenA));
+
+    expect(ownerReceivedRes.status).toBe(200);
+    expect(ownerReceivedRes.body).toHaveLength(1);
+    expect(ownerReceivedRes.body[0].feedbackId).toBe(formA1._id);
+    expect(ownerReceivedRes.body[0].userId).toBe(String(userB._id));
+
+    const notOwnerReceivedRes = await request(app)
+      .get(`/api/response?feedbackFormId=${formA1._id}&ownerView=true`)
+      .set(makeAuthHeader(tokenB));
+
+    expect(notOwnerReceivedRes.status).toBe(403);
   });
 
   test("GET /api/response/:id allows owner and blocks other users", async () => {
@@ -448,7 +467,7 @@ describe("FeedbackForm and Response API routes", () => {
       .post("/api/response")
       .set(makeAuthHeader(ownerToken))
       .send({
-        feedbackFormID: form._id,
+        feedbackFormId: form._id,
         answers: [
           {
             questionId: form.questions.find((q) => q.order === 1)._id,
@@ -517,7 +536,7 @@ describe("FeedbackForm and Response API routes", () => {
       .post("/api/response")
       .set(makeAuthHeader(token))
       .send({
-        feedbackFormID: form._id,
+        feedbackFormId: form._id,
         answers: [
           {
             questionId: form.questions.find((q) => q.order === 1)._id,

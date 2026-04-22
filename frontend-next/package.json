@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:gh": "set NEXT_PUBLIC_BASE_PATH=/ArtPort&& next build",
-    "start": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$p=(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty OwningProcess); if($p){Stop-Process -Id $p -Force}; npx serve@latest -l 3000 out\"",
+    "start": "next start -p 3000",
     "lint": "eslint"
   },
   "dependencies": {
@@ -20,9 +20,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "autoprefixer": "^10.5.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4",
+    "postcss": "^8.5.9",
+    "tailwindcss": "^4.2.2",
     "typescript": "^5"
   }
 }

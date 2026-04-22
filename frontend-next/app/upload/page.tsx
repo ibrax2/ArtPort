@@ -1,5 +1,10 @@
+import RequireAuth from "@/components/RequireAuth";
 import UploadPageClient from "./UploadPageClient";
 
 export default function UploadPage() {
-  return <UploadPageClient />;
+  return (
+    <RequireAuth>
+      <UploadPageClient />
+    </RequireAuth>
+  );
 }

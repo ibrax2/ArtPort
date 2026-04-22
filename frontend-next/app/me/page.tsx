@@ -6,16 +6,16 @@ import RequireAuth from "@/components/RequireAuth";
 import ProfileCard, {
   type ProfilePostItem,
 } from "@/components/profilecard";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import {
+  artworkMatchesUserId,
+  fetchArtworks,
+  mapArtworkToProfileItem,
+} from "@/lib/artworkApi";
+import { getClientAuthToken } from "@/lib/authSession";
+import { fetchCurrentUser } from "@/lib/currentUserApi";
+import { apiFetch } from "@/lib/apiClient";
+import { patchUserBio } from "@/lib/userBioApi";
 const USER_STATE_EVENT = "artport-user-updated";
-
-type StoredUser = {
-  _id?: string;
-  username?: string;
-  email?: string;
-  token?: string;
-};
 
 type ApiUserProfile = {
   _id?: string;
@@ -26,39 +26,10 @@ type ApiUserProfile = {
   bannerPictureUrl?: string;
 };
 
-type ApiArtwork = {
-  _id: string;
-  title?: string;
-  filePath?: string;
-  thumbnailPath?: string;
-  imageUrl?: string;
-  userId?: string;
-};
-
-function mapUserArtworks(
-  data: unknown,
-  userId: string | undefined
-): ProfilePostItem[] {
-  if (!Array.isArray(data) || !userId) return [];
-  const items: ProfilePostItem[] = [];
-  for (const raw of data) {
-    const a = raw as ApiArtwork;
-    if (a.userId == null || String(a.userId) !== String(userId)) continue;
-    const imageSrc =
-      a.thumbnailPath || a.filePath || a.imageUrl || "";
-    if (!imageSrc) continue;
-    items.push({
-      id: String(a._id),
-      title: a.title?.trim() ? a.title : "Untitled",
-      imageSrc,
-    });
-  }
-  return items;
-}
-
 function MePageContent() {
   const [username, setUsername] = useState("Artist");
   const [userId, setUserId] = useState<string | undefined>(undefined);
+  const [bio, setBio] = useState("");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(undefined);
   const [bannerPictureUrl, setBannerPictureUrl] = useState<string | undefined>(undefined);
   const [userPosts, setUserPosts] = useState<ProfilePostItem[]>([]);
@@ -67,13 +38,13 @@ function MePageContent() {
     async (fieldName: "profilePicture" | "bannerPicture", blob: Blob) => {
       if (!userId) return;
 
-      const token = localStorage.getItem("token");
+      const token = getClientAuthToken();
       const formData = new FormData();
       const fileName =
         fieldName === "profilePicture" ? "profile.jpg" : "banner.jpg";
       formData.append(fieldName, blob, fileName);
 
-      const res = await fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}`, {
+      const res = await apiFetch(`/api/users/${encodeURIComponent(userId)}`, {
         method: "PATCH",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,
@@ -118,14 +89,21 @@ function MePageContent() {
   );
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      if (!raw) return;
-      const user = JSON.parse(raw) as StoredUser;
-      if (user.username) setUsername(user.username);
-      if (user._id) setUserId(String(user._id));
-    } catch {
-    }
+    let cancelled = false;
+
+    fetchCurrentUser().then((data) => {
+      if (cancelled || !data || !data._id) return;
+
+      if (data.username) setUsername(data.username);
+      setUserId(String(data._id));
+      if (typeof data.bio === "string") setBio(data.bio);
+      if (data.profilePictureUrl) setProfilePictureUrl(data.profilePictureUrl);
+      if (data.bannerPictureUrl) setBannerPictureUrl(data.bannerPictureUrl);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -133,25 +111,14 @@ function MePageContent() {
 
     let cancelled = false;
 
-    fetch(`${API_URL}/api/users/${encodeURIComponent(userId)}`)
+    apiFetch(`/api/users/${encodeURIComponent(userId)}`, { auth: false })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: ApiUserProfile | null) => {
         if (cancelled || !data) return;
         if (data.username) setUsername(data.username);
+        if (typeof data.bio === "string") setBio(data.bio);
         if (data.profilePictureUrl) setProfilePictureUrl(data.profilePictureUrl);
         if (data.bannerPictureUrl) setBannerPictureUrl(data.bannerPictureUrl);
-        const raw = localStorage.getItem("user");
-        const existing = raw ? (JSON.parse(raw) as StoredUser) : {};
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            ...existing,
-            _id: data._id ?? existing._id,
-            username: data.username ?? existing.username,
-            email: data.email ?? existing.email,
-          }),
-        );
-        window.dispatchEvent(new Event(USER_STATE_EVENT));
       })
       .catch(() => {
       });
@@ -159,44 +126,61 @@ function MePageContent() {
     return () => {
       cancelled = true;
     };
+  }, [userId]);
+
+  const loadUserPosts = useCallback(() => {
+    if (!userId) return;
+    fetchArtworks().then((data) => {
+      const mapped = data
+        .filter((artwork) => artworkMatchesUserId(artwork, userId))
+        .map((artwork, index) => mapArtworkToProfileItem(artwork, index));
+      setUserPosts(mapped);
+    }).catch(() => {
+      setUserPosts([]);
+    });
   }, [userId]);
 
   useEffect(() => {
-    if (!userId) {
-      setUserPosts([]);
-      return;
-    }
-    let cancelled = false;
-    fetch(`${API_URL}/api/artworks`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: unknown) => {
-        if (cancelled) return;
-        setUserPosts(mapUserArtworks(data, userId));
-      })
-      .catch(() => {
-        if (!cancelled) setUserPosts([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [userId]);
+    loadUserPosts();
+  }, [loadUserPosts]);
+
+  const visibleUserPosts = userId ? userPosts : [];
+  const profileCardKey = [
+    userId ?? "anon",
+    username,
+    profilePictureUrl ?? "",
+    bannerPictureUrl ?? "",
+  ].join("|");
 
   const postCount = userPosts.length;
+
+  const handleBioSave = useCallback(
+    async (next: string) => {
+      if (!userId) return;
+      const token = getClientAuthToken();
+      await patchUserBio(userId, next, token);
+      setBio(next);
+      window.dispatchEvent(new Event(USER_STATE_EVENT));
+    },
+    [userId],
+  );
 
   return (
     <main className="user-profile-main">
       <ProfileCard
+        key={profileCardKey}
         username={username}
         avatarSrc={profilePictureUrl}
         bannerSrc={bannerPictureUrl}
-        bio="Welcome to your ArtPort profile."
+        bio={bio}
         followers={0}
         following={0}
         posts={postCount}
-        userPosts={userPosts}
+        userPosts={visibleUserPosts}
         isEditable={true}
         onAvatarImageChange={handleAvatarImageChange}
         onBannerImageChange={handleBannerImageChange}
+        onBioSave={handleBioSave}
       />
     </main>
   );

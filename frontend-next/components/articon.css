@@ -13,8 +13,8 @@
 }
 
 .articon-overlay {
-  @apply absolute inset-0 rounded-[31px] opacity-0 transition duration-300 flex flex-col justify-between p-3;
-  background: linear-gradient(180deg, #fff2e2 0%, #8b6334 100%);
+  @apply absolute inset-0 rounded-[31px] opacity-0 transition duration-300 flex flex-col justify-between p-6;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.15) 30%, rgba(0, 0, 0, 0.85) 100%);
 }
 
 .articon-container:hover .articon-overlay {
@@ -26,13 +26,15 @@
 }
 
 .articon-avatar {
-  @apply w-[63px] h-[63px] rounded-full object-cover border border-black/10;
+  @apply w-[68px] h-[68px] rounded-full object-cover border-2 border-white shadow-lg;
 }
 
 .articon-username {
-  @apply text-black text-[16px] font-extralight;
+  @apply text-white text-[20px] font-bold tracking-tight;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
 }
 
 .articon-title {
-  @apply text-black text-[36px] font-normal leading-none truncate;
+  @apply text-white text-[36px] font-bold leading-none truncate;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }

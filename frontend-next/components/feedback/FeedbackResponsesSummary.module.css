@@ -1,0 +1,156 @@
+@reference "tailwindcss";
+
+.wrap {
+  @apply flex flex-col gap-5 mb-6;
+}
+
+.intro {
+  @apply m-0 text-sm text-[#4b5563];
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+.totalBadge {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold text-[#2a241c];
+  background: rgba(154, 132, 106, 0.25);
+  border: 1px solid #c9b297;
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+.chartCard {
+  @apply rounded-2xl border p-4;
+  border-color: #d4b894;
+  background: linear-gradient(180deg, #fffaf5 0%, #f5ebe0 100%);
+  box-shadow: 0 1px 3px rgba(42, 36, 28, 0.08);
+}
+
+.chartTitle {
+  @apply m-0 mb-3 text-base font-semibold text-[#2a241c] leading-snug;
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+.chartSubtitle {
+  @apply m-0 mb-3 text-xs text-[#6b5b4a];
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+/* —— Pie (conic) —— */
+.pieRow {
+  @apply flex flex-wrap items-center gap-6;
+}
+
+.pieDisk {
+  flex-shrink: 0;
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  border: 3px solid #c9b297;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.pieLegend {
+  @apply flex flex-col gap-2 min-w-[140px] flex-1;
+}
+
+.pieLegendItem {
+  @apply flex items-center gap-2 text-sm text-[#374151];
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+.pieSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.piePct {
+  @apply ml-auto text-xs text-[#6b7280] tabular-nums;
+}
+
+.pieEmpty {
+  @apply text-sm text-[#6b7280] m-0;
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+/* —— Horizontal bars —— */
+.barRows {
+  @apply flex flex-col gap-3;
+}
+
+.barRow {
+  @apply grid gap-2 items-center;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 2fr) auto;
+}
+
+@media (max-width: 480px) {
+  .barRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.barLabel {
+  @apply text-sm text-[#374151] m-0 min-w-0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+.barTrack {
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(201, 178, 151, 0.35);
+  overflow: hidden;
+  border: 1px solid #e8dcc8;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #9a846a, #c9a882);
+  min-width: 2px;
+  transition: width 0.35s ease;
+}
+
+.barCount {
+  @apply text-sm font-semibold text-[#2a241c] tabular-nums;
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+/* Rating = vertical-ish emphasis with tick labels */
+.ratingBars .barRow {
+  grid-template-columns: 2.5rem minmax(120px, 2fr) auto;
+}
+
+.ratingTick {
+  @apply text-sm font-semibold text-[#5a4d3f] tabular-nums text-center m-0;
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+/* Text block */
+.textBlock {
+  @apply rounded-xl border px-3 py-2 text-sm text-[#374151];
+  border-color: #e8dcc8;
+  background: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-geist-sans), "Inter", system-ui, sans-serif;
+}
+
+.textScroll {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.textScroll:focus-visible {
+  outline: 2px solid #215a80;
+  outline-offset: 2px;
+}
+
+.textList {
+  @apply flex flex-col gap-1.5 m-0 p-0 list-none;
+}
+
+.textList li {
+  @apply pl-3 border-l-2 text-[#1f2937];
+  border-color: #c9b297;
+  overflow-wrap: anywhere;
+}

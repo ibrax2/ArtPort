@@ -119,6 +119,14 @@
   text-align: center;
 }
 
+.upload-account-wait {
+  margin: 0 0 0.5rem;
+  color: #5a4d3f;
+  font-size: 0.95rem;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  text-align: center;
+}
+
 .title-required {
   color: #991b1b;
 }

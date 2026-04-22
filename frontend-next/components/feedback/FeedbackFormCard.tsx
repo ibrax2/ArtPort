@@ -7,6 +7,7 @@ import QuestionField from "@/components/questions/QuestionField";
 import CheckboxOption from "@/components/questions/CheckboxOption";
 import RadioOption from "@/components/questions/RadioOption";
 import RatingScale from "@/components/questions/RatingScale";
+import FeedbackTextAnswer from "@/components/questions/FeedbackTextAnswer";
 import type {
   FeedbackFormConfig,
   FeedbackQuestion,
@@ -15,6 +16,8 @@ import {
   buildResponseAnswers,
   submitFeedbackResponse,
 } from "@/lib/feedbackApi";
+import { getClientAuthToken } from "@/lib/authSession";
+import { sanitizeMultilineText, TEXT_LIMITS } from "@/lib/textInput";
 
 import styles from "./FeedbackFormCard.module.css";
 
@@ -66,7 +69,10 @@ export default function FeedbackFormCard({
   };
 
   const setText = (id: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [id]: value }));
+    setAnswers((prev) => ({
+      ...prev,
+      [id]: sanitizeMultilineText(value, TEXT_LIMITS.feedbackTextAnswer),
+    }));
     setSubmitError("");
   };
 
@@ -105,10 +111,7 @@ export default function FeedbackFormCard({
     }
 
     if (remoteFormId) {
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("token")
-          : null;
+      const token = getClientAuthToken();
       if (!token) {
         setSubmitError("Please log in to submit feedback.");
         return;
@@ -142,7 +145,6 @@ export default function FeedbackFormCard({
     } catch {
       /* ignore */
     }
-    console.log("Feedback submission", payload);
     setSubmitted(true);
   };
 
@@ -264,12 +266,10 @@ export default function FeedbackFormCard({
                     detail={q.detail}
                     required={q.required}
                   >
-                    <textarea
-                      className={styles.textArea}
-                      rows={4}
+                    <FeedbackTextAnswer
                       value={value}
-                      onChange={(ev) => setText(q.id, ev.target.value)}
-                      aria-required={q.required}
+                      onChange={(next) => setText(q.id, next)}
+                      required={q.required}
                     />
                   </QuestionField>
                 );

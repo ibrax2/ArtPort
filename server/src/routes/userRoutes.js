@@ -1,6 +1,8 @@
 import express from "express";
 import { upload } from "../middleware/upload.js";
+import { protect } from "../middleware/auth.js";
 import {
+  getCurrentUser,
   getUsers,
   registerUser,
   loginUser,
@@ -15,11 +17,13 @@ router.route("/").get(getUsers);
 
 router.post("/register", upload.single("profilePicture"), registerUser);
 router.post("/login", loginUser);
+router.get("/me", protect, getCurrentUser);
 
 router.get("/by-username/:username", getUserByUsername);
 
 router.patch(
   "/:id",
+  protect,
   upload.fields([
     { name: "profilePicture", maxCount: 1 },
     { name: "bannerPicture", maxCount: 1 },

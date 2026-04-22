@@ -4,12 +4,27 @@ import jwt from "jsonwebtoken";
 import { uploadImageToS3 } from "./imageUploadController.js";
 import { withUserDeliveryUrls } from "../utils/mediaDelivery.js";
 
+const AUTH_COOKIE_NAME = process.env.AUTHCOOKIE_NAME || "artport_token";
+
 // Generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
 };
+
+const setAuthCookie = (res, token) => {
+  res.cookie(AUTH_COOKIE_NAME, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    path: "/",
+  });
+};
+
+const escapeRegex = (value) =>
+  String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -20,6 +35,21 @@ export const getUsers = async (req, res) => {
     res.json(users.map((user) => withUserDeliveryUrls(user)));
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Get current authenticated user
+// @route   GET /api/users/me
+// @access  Private
+export const getCurrentUser = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    return res.json(withUserDeliveryUrls(req.user));
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -53,12 +83,14 @@ export const registerUser = async (req, res) => {
     });
 
     if (user) {
+      const token = generateToken(user._id);
+      setAuthCookie(res, token);
       res.status(201).json({
         _id: user._id,
         username: user.username,
         email: user.email,
         profilePictureUrl: withUserDeliveryUrls(user).profilePictureUrl,
-        token: generateToken(user._id),
+        token,
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
@@ -88,13 +120,16 @@ export const loginUser = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
+    const token = generateToken(user._id);
+    setAuthCookie(res, token);
+
     res.json({
       _id: user._id,
       username: user.username,
       email: user.email,
       bio: user.bio,
       profilePictureUrl: withUserDeliveryUrls(user).profilePictureUrl,
-      token: generateToken(user._id),
+      token,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -123,7 +158,11 @@ export const getUserProfile = async (req, res) => {
 // @access  Public
 export const getUserByUsername = async (req, res) => {
   try {
-    const user = await User.findOne({ username: req.params.username }).select(
+    const usernameRegex = new RegExp(
+      `^${escapeRegex(req.params.username)}$`,
+      "i",
+    );
+    const user = await User.findOne({ username: usernameRegex }).select(
       "-passwordHash -email",
     );
 
@@ -142,6 +181,16 @@ export const getUserByUsername = async (req, res) => {
 // @access  Public
 export const updateUser = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    if (String(req.user._id) !== String(req.params.id)) {
+      return res
+        .status(403)
+        .json({ message: "You can only update your own profile" });
+    }
+
     const user = await User.findById(req.params.id);
 
     if (!user) {

@@ -4,6 +4,7 @@ import Question from "../models/Question.js";
 import Option from "../models/Option.js";
 import Response from "../models/Response.js";
 import Answer from "../models/Answer.js";
+import User from "../models/User.js";
 
 const isObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
@@ -60,14 +61,13 @@ const cleanupFormTree = async (formId) => {
 // @route   POST /api/feedbackForm
 // @access  Private
 export const createFeedbackForm = async (req, res) => {
-  const { artworkID, artworkId, userId, createdBy, questions } = req.body;
+  const { artworkId, userId, createdBy, questions } = req.body;
 
-  const resolvedArtworkId = artworkID || artworkId;
   const requestedCreatedBy = userId || createdBy;
   const authUserId = String(req.user._id);
 
-  if (!isObjectId(resolvedArtworkId)) {
-    return res.status(400).json({ message: "Valid artworkID is required" });
+  if (!isObjectId(artworkId)) {
+    return res.status(400).json({ message: "Valid artworkId is required" });
   }
 
   if (requestedCreatedBy && String(requestedCreatedBy) !== authUserId) {
@@ -86,7 +86,7 @@ export const createFeedbackForm = async (req, res) => {
 
   try {
     form = await FeedbackForm.create({
-      artworkId: resolvedArtworkId,
+      artworkId: artworkId,
       createdBy: authUserId,
     });
 
@@ -173,13 +173,202 @@ export const createFeedbackForm = async (req, res) => {
   }
 };
 
+// @desc    Update a feedback form with questions and optional MCQ options
+// @route   PUT /api/feedbackForm/:id
+// @access  Private
+export const updateFeedbackForm = async (req, res) => {
+  const { questions } = req.body;
+  const formId = req.params.id;
+  const authUserId = String(req.user._id);
+
+  if (!isObjectId(formId)) {
+    return res.status(400).json({ message: "Invalid feedback form id" });
+  }
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "questions must be a non-empty array" });
+  }
+
+  try {
+    const form = await FeedbackForm.findById(formId);
+
+    if (!form) {
+      return res.status(404).json({ message: "Feedback form not found" });
+    }
+
+    if (String(form.createdBy) !== authUserId) {
+      return res.status(403).json({
+        message: "You can only edit feedback forms that you created",
+      });
+    }
+
+    const existingQuestions = await Question.find({ feedbackId: formId });
+    const existingQuestionIds = new Set(
+      existingQuestions.map((q) => String(q._id)),
+    );
+
+    const providedQuestionIds = new Set();
+    const questionUpdates = [];
+    const questionCreates = [];
+
+    for (const [index, item] of questions.entries()) {
+      const normalizedType = normalizeQuestionType(item.type);
+
+      if (!item.question || !normalizedType) {
+        return res.status(400).json({
+          message: `Question at index ${index} must include question and a valid type`,
+        });
+      }
+
+      const questionOrder = Number.isInteger(item.order)
+        ? item.order
+        : index + 1;
+
+      const ratingMin = toIntOrNull(item.rating?.ratingMin ?? item.ratingMin);
+      const ratingMax = toIntOrNull(item.rating?.ratingMax ?? item.ratingMax);
+
+      if (normalizedType === "rating") {
+        if (
+          ratingMin === null ||
+          ratingMax === null ||
+          ratingMin >= ratingMax
+        ) {
+          return res.status(400).json({
+            message: `Rating question at index ${index} must include valid ratingMin and ratingMax`,
+          });
+        }
+      }
+
+      const allowMultipleSelections = item.allowMultipleSelections !== false;
+
+      const questionUpdate = {
+        question: item.question,
+        type: normalizedType,
+        order: questionOrder,
+        ratingMin: normalizedType === "rating" ? ratingMin : null,
+        ratingMax: normalizedType === "rating" ? ratingMax : null,
+        allowMultipleSelections:
+          normalizedType === "mcq" ? allowMultipleSelections : true,
+      };
+
+      if (item._id && isObjectId(item._id)) {
+        const providedId = String(item._id);
+        providedQuestionIds.add(providedId);
+
+        if (existingQuestionIds.has(providedId)) {
+          questionUpdates.push({
+            id: item._id,
+            data: questionUpdate,
+            optionInput: item.Options || item.options || [],
+            normalizedType,
+            index,
+          });
+        } else {
+          return res.status(400).json({
+            message: `Question at index ${index} has invalid _id that does not belong to this form`,
+          });
+        }
+      } else {
+        questionCreates.push({
+          data: questionUpdate,
+          optionInput: item.Options || item.options || [],
+          normalizedType,
+          index,
+        });
+      }
+    }
+
+    const questionIdsToDelete = Array.from(existingQuestionIds).filter(
+      (id) => !providedQuestionIds.has(id),
+    );
+
+    if (questionIdsToDelete.length > 0) {
+      await Option.deleteMany({ questionId: { $in: questionIdsToDelete } });
+      await Question.deleteMany({ _id: { $in: questionIdsToDelete } });
+    }
+
+    for (const update of questionUpdates) {
+      await Question.findByIdAndUpdate(update.id, update.data);
+
+      if (update.normalizedType === "mcq") {
+        const optionInput = update.optionInput;
+
+        if (!Array.isArray(optionInput) || optionInput.length === 0) {
+          return res.status(400).json({
+            message: `MCQ question at index ${update.index} must include a non-empty options array`,
+          });
+        }
+
+        const optionDocs = optionInput.map((opt, optionIndex) => ({
+          questionId: update.id,
+          option: opt.Option || opt.option,
+          order: Number.isInteger(opt.order) ? opt.order : optionIndex + 1,
+        }));
+
+        const hasInvalidOption = optionDocs.some((opt) => !opt.option);
+
+        if (hasInvalidOption) {
+          return res.status(400).json({
+            message: `Each option in MCQ question at index ${update.index} must include Option/option`,
+          });
+        }
+
+        await Option.deleteMany({ questionId: update.id });
+        await Option.insertMany(optionDocs);
+      } else {
+        await Option.deleteMany({ questionId: update.id });
+      }
+    }
+
+    for (const create of questionCreates) {
+      const createdQuestion = await Question.create({
+        feedbackId: formId,
+        ...create.data,
+      });
+
+      if (create.normalizedType === "mcq") {
+        const optionInput = create.optionInput;
+
+        if (!Array.isArray(optionInput) || optionInput.length === 0) {
+          return res.status(400).json({
+            message: `MCQ question at index ${create.index} must include a non-empty options array`,
+          });
+        }
+
+        const optionDocs = optionInput.map((opt, optionIndex) => ({
+          questionId: createdQuestion._id,
+          option: opt.Option || opt.option,
+          order: Number.isInteger(opt.order) ? opt.order : optionIndex + 1,
+        }));
+
+        const hasInvalidOption = optionDocs.some((opt) => !opt.option);
+
+        if (hasInvalidOption) {
+          return res.status(400).json({
+            message: `Each option in MCQ question at index ${create.index} must include Option/option`,
+          });
+        }
+
+        await Option.insertMany(optionDocs);
+      }
+    }
+
+    const updated = await getFeedbackFormByIdInternal(formId);
+    return res.json(updated);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    List feedback forms (optionally filter by artworkId)
 // @route   GET /api/feedbackForm?artworkId=<id>&userId=<id>
 // @access  Private
 export const getFeedbackForms = async (req, res) => {
   try {
     const authUserId = String(req.user._id);
-    const { artworkId, artworkID, userId, createdBy } = req.query;
+    const { artworkId, userId, createdBy } = req.query;
     const requestedOwnerId = userId || createdBy;
 
     if (requestedOwnerId && String(requestedOwnerId) !== authUserId) {
@@ -188,8 +377,17 @@ export const getFeedbackForms = async (req, res) => {
       });
     }
 
-    const resolvedArtworkId = artworkID || artworkId;
-    const query = { createdBy: authUserId };
+    const resolvedArtworkId = artworkId;
+    const query = {};
+
+    // Only filter by creator if requesting own forms or no filters specified
+    // When fetching by artworkId, allow public access (form creator doesn't restrict viewers)
+    if (requestedOwnerId) {
+      query.createdBy = authUserId;
+    } else if (!resolvedArtworkId) {
+      // If no artworkId or userId specified, default to own forms
+      query.createdBy = authUserId;
+    }
 
     if (resolvedArtworkId !== undefined) {
       if (!isObjectId(resolvedArtworkId)) {
@@ -318,18 +516,15 @@ export const getFeedbackFormById = async (req, res) => {
 // @route   POST /api/response
 // @access  Private
 export const createResponse = async (req, res) => {
-  const { feedbackFormID, feedbackId, userID, userId, Answers, answers } =
-    req.body;
+  const { feedbackFormId, userId, answers } = req.body;
 
-  const resolvedFeedbackId = feedbackFormID || feedbackId;
-  const requestedUserId = userID || userId;
-  const resolvedAnswers = Answers || answers;
+  const requestedUserId = userId;
   const authUserId = String(req.user._id);
 
-  if (!isObjectId(resolvedFeedbackId)) {
+  if (!isObjectId(feedbackFormId)) {
     return res
       .status(400)
-      .json({ message: "Valid feedbackFormID is required" });
+      .json({ message: "Valid feedbackFormId is required" });
   }
 
   if (requestedUserId && String(requestedUserId) !== authUserId) {
@@ -338,14 +533,14 @@ export const createResponse = async (req, res) => {
     });
   }
 
-  if (!Array.isArray(resolvedAnswers) || resolvedAnswers.length === 0) {
+  if (!Array.isArray(answers) || answers.length === 0) {
     return res
       .status(400)
-      .json({ message: "Answers must be a non-empty array" });
+      .json({ message: "answers must be a non-empty array" });
   }
 
   try {
-    const form = await FeedbackForm.findById(resolvedFeedbackId);
+    const form = await FeedbackForm.findById(feedbackFormId);
 
     if (!form) {
       return res.status(404).json({ message: "Feedback form not found" });
@@ -385,13 +580,13 @@ export const createResponse = async (req, res) => {
 
     const answerDocs = [];
 
-    for (const [index, answerItem] of resolvedAnswers.entries()) {
-      const questionId = answerItem.questionID || answerItem.questionId;
+    for (const [index, answerItem] of answers.entries()) {
+      const questionId = answerItem.questionId;
 
       if (!isObjectId(questionId)) {
         await Response.findByIdAndDelete(response._id);
         return res.status(400).json({
-          message: `Answer at index ${index} has invalid questionID`,
+          message: `Answer at index ${index} has invalid questionId`,
         });
       }
 
@@ -400,7 +595,7 @@ export const createResponse = async (req, res) => {
       if (!question) {
         await Response.findByIdAndDelete(response._id);
         return res.status(400).json({
-          message: `Question ${questionId} does not belong to feedback form ${resolvedFeedbackId}`,
+          message: `Question ${questionId} does not belong to feedback form ${feedbackFormId}`,
         });
       }
 
@@ -498,24 +693,57 @@ export const createResponse = async (req, res) => {
 export const getResponses = async (req, res) => {
   try {
     const authUserId = String(req.user._id);
-    const { feedbackFormId, feedbackFormID, feedbackId, userId, userID } =
-      req.query;
-    const requestedUserId = userID || userId;
+    const { feedbackFormId, userId, ownerView } = req.query;
+    const requestedUserId = userId;
+    const ownerViewRequested =
+      ownerView === true || ownerView === "true" || ownerView === "1";
 
-    if (requestedUserId && String(requestedUserId) !== authUserId) {
-      return res.status(403).json({
-        message: "You can only list your own responses",
-      });
-    }
+    const resolvedFeedbackId = feedbackFormId;
+    const query = {};
 
-    const resolvedFeedbackId = feedbackFormID || feedbackFormId || feedbackId;
-    const query = { userId: authUserId };
-
-    if (resolvedFeedbackId !== undefined) {
-      if (!isObjectId(resolvedFeedbackId)) {
-        return res.status(400).json({ message: "Invalid feedbackFormId" });
+    if (ownerViewRequested) {
+      if (requestedUserId) {
+        return res.status(400).json({
+          message: "userId filter cannot be used with ownerView",
+        });
       }
+
+      if (!resolvedFeedbackId || !isObjectId(resolvedFeedbackId)) {
+        return res
+          .status(400)
+          .json({ message: "Valid feedbackFormId is required" });
+      }
+
+      const feedbackForm =
+        await FeedbackForm.findById(resolvedFeedbackId).select("createdBy");
+
+      if (!feedbackForm) {
+        return res.status(404).json({ message: "Feedback form not found" });
+      }
+
+      if (String(feedbackForm.createdBy) !== authUserId) {
+        return res.status(403).json({
+          message: "You can only list received responses for your own artwork",
+        });
+      }
+
       query.feedbackId = resolvedFeedbackId;
+      query.userId = { $ne: authUserId };
+    } else {
+      if (requestedUserId && String(requestedUserId) !== authUserId) {
+        return res.status(403).json({
+          message: "You can only list your own responses",
+        });
+      }
+
+      query.userId = authUserId;
+
+      if (resolvedFeedbackId !== undefined) {
+        if (!isObjectId(resolvedFeedbackId)) {
+          return res.status(400).json({ message: "Invalid feedbackFormId" });
+        }
+        query.feedbackId = resolvedFeedbackId;
+      }
     }
 
     const responses = await Response.find(query).sort({ createdAt: -1 });
@@ -584,6 +812,7 @@ const buildResponseView = (response, formView, answers, questionById) => {
     _id: response._id,
     feedbackId: response.feedbackId,
     userId: response.userId,
+    username: response.username,
     uploadDate: response.uploadDate,
     createdAt: response.createdAt,
     updatedAt: response.updatedAt,
@@ -619,8 +848,17 @@ const getResponseByIdInternal = async (responseId) => {
   const answers = await Answer.find({ responseId: response._id });
   const questions = await Question.find({ feedbackId: response.feedbackId });
   const questionById = new Map(questions.map((q) => [String(q._id), q]));
+  const responder = await User.findById(response.userId).select("username");
 
-  return buildResponseView(response, formView, answers, questionById);
+  return buildResponseView(
+    {
+      ...response.toObject(),
+      username: responder?.username || null,
+    },
+    formView,
+    answers,
+    questionById,
+  );
 };
 
 // @desc    Get one response including the full form structure + chosen answers

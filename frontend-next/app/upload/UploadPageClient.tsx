@@ -4,29 +4,29 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import UploadCard from "@/components/uploadcard";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { apiFetch } from "@/lib/apiClient";
+import { fetchCurrentUser } from "@/lib/currentUserApi";
 
 export default function UploadPageClient() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("user");
-      if (!raw) return;
-      const u = JSON.parse(raw) as { _id?: string };
-      if (u?._id) setUserId(u._id);
-    } catch {
-      /* ignore */
-    }
+    let cancelled = false;
+
+    fetchCurrentUser().then((user) => {
+      if (cancelled || !user?._id) return;
+      setUserId(String(user._id));
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const onUpload = async (formData: FormData) => {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${API_URL}/api/artworks`, {
+    const res = await apiFetch("/api/artworks", {
       method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
     const data = (await res.json().catch(() => ({}))) as {

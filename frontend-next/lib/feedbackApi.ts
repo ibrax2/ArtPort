@@ -2,12 +2,14 @@ import type {
   FeedbackFormConfig,
   FeedbackQuestion,
 } from "@/types/feedback";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+import { apiUrl } from "@/lib/apiConfig";
+import { getClientAuthToken } from "@/lib/authSession";
+import { sanitizeMultilineText, TEXT_LIMITS } from "@/lib/textInput";
 
 export type ApiFeedbackFormQuestion = {
   _id: string;
   question: string;
+  detail?: string | null;
   type: "mcq" | "rating" | "text";
   order: number;
   allowMultipleSelections: boolean | null;
@@ -22,18 +24,48 @@ export type ApiFeedbackForm = {
   questions: ApiFeedbackFormQuestion[];
 };
 
+export type ApiFeedbackResponseQuestion = {
+  _id: string;
+  question: string;
+  type: "mcq" | "rating" | "text";
+  order: number;
+  options: { _id: string; order: number; option: string; selected: boolean }[];
+  selectedOptionOrders: number[];
+  ratingSelection: number | null;
+  textValue: string | null;
+};
+
+export type ApiFeedbackResponse = {
+  _id: string;
+  feedbackId: string;
+  userId: string;
+  username?: string | null;
+  createdAt?: string;
+  form: {
+    questions: ApiFeedbackResponseQuestion[];
+  };
+};
+
 function authHeaders(token: string | null): HeadersInit {
+  const resolvedToken = token || getClientAuthToken();
   const headers: HeadersInit = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (resolvedToken) headers.Authorization = `Bearer ${resolvedToken}`;
   return headers;
+}
+
+function authFetchOptions(token: string | null): RequestInit {
+  return {
+    headers: authHeaders(token),
+    credentials: "include",
+  };
 }
 
 export async function fetchFeedbackForm(
   formId: string,
   token: string | null
 ): Promise<ApiFeedbackForm> {
-  const res = await fetch(`${API_URL}/api/feedbackForm/${formId}`, {
-    headers: authHeaders(token),
+  const res = await fetch(apiUrl(`/api/feedbackForm/${formId}`), {
+    ...authFetchOptions(token),
   });
   const data = (await res.json().catch(() => ({}))) as {
     message?: string;
@@ -52,19 +84,17 @@ export async function fetchFeedbackForm(
   return data as ApiFeedbackForm;
 }
 
-/**
- * GET /api/feedbackForm?artworkId=<id>
- * Returns the most recent feedback form for the artwork, or null if none / auth fails.
- */
 export async function fetchFeedbackFormByArtworkId(
   artworkId: string,
   token: string | null
 ): Promise<ApiFeedbackForm | null> {
-  if (!artworkId || !token) return null;
+  if (!artworkId) return null;
   try {
     const res = await fetch(
-      `${API_URL}/api/feedbackForm?artworkId=${encodeURIComponent(artworkId)}`,
-      { headers: authHeaders(token) }
+      apiUrl(
+        `/api/feedbackForm?artworkId=${encodeURIComponent(artworkId)}`
+      ),
+      authFetchOptions(token)
     );
     if (!res.ok) return null;
     const data = (await res.json().catch(() => null)) as unknown;
@@ -80,6 +110,9 @@ export async function fetchFeedbackFormByArtworkId(
 export function mapApiFormToConfig(form: ApiFeedbackForm): FeedbackFormConfig {
   const sorted = [...form.questions].sort((a, b) => a.order - b.order);
 
+  const detailFromApi = (d: string | null | undefined) =>
+    typeof d === "string" && d.trim() ? d : undefined;
+
   const questions: FeedbackQuestion[] = sorted.map((q) => {
     if (q.type === "rating") {
       const r = q.rating;
@@ -89,6 +122,7 @@ export function mapApiFormToConfig(form: ApiFeedbackForm): FeedbackFormConfig {
         id: String(q._id),
         type: "rating",
         label: q.question,
+        detail: detailFromApi(q.detail),
         required: true,
         min,
         max,
@@ -100,6 +134,7 @@ export function mapApiFormToConfig(form: ApiFeedbackForm): FeedbackFormConfig {
         id: String(q._id),
         type: "text",
         label: q.question,
+        detail: detailFromApi(q.detail),
         required: false,
       };
     }
@@ -115,6 +150,7 @@ export function mapApiFormToConfig(form: ApiFeedbackForm): FeedbackFormConfig {
       id: String(q._id),
       type: multi ? "checkbox" : "radio",
       label: q.question,
+      detail: detailFromApi(q.detail),
       required: !multi,
       options,
     };
@@ -154,7 +190,10 @@ export function buildResponseAnswers(
     }
 
     if (q.type === "text") {
-      const s = typeof raw === "string" ? raw.trim() : "";
+      const s =
+        typeof raw === "string"
+          ? sanitizeMultilineText(raw, TEXT_LIMITS.feedbackTextAnswer).trim()
+          : "";
       if (!s) continue;
       out.push({ questionId: q.id, textValue: s });
       continue;
@@ -187,9 +226,9 @@ export function buildResponseAnswers(
   return out;
 }
 
-/** Body shape for POST /api/feedbackForm (matches server controller) */
 export type CreateFeedbackFormQuestion = {
   question: string;
+  detail?: string;
   type: "mcq" | "rating" | "text";
   order: number;
   rating?: { ratingMin: number; ratingMax: number };
@@ -205,9 +244,14 @@ export function mapFeedbackQuestionsToCreatePayload(
 ): CreateFeedbackFormQuestion[] {
   return questions.map((q, index) => {
     const order = index + 1;
+    const detail =
+      typeof q.detail === "string" && q.detail.trim()
+        ? q.detail.trim()
+        : undefined;
     if (q.type === "rating") {
       return {
         question: q.label,
+        ...(detail ? { detail } : {}),
         type: "rating",
         order,
         rating: {
@@ -219,6 +263,7 @@ export function mapFeedbackQuestionsToCreatePayload(
     if (q.type === "text") {
       return {
         question: q.label,
+        ...(detail ? { detail } : {}),
         type: "text",
         order,
       };
@@ -229,6 +274,7 @@ export function mapFeedbackQuestionsToCreatePayload(
     }));
     return {
       question: q.label,
+      ...(detail ? { detail } : {}),
       type: "mcq",
       order,
       allowMultipleSelections: q.type === "checkbox",
@@ -242,11 +288,11 @@ export async function createFeedbackForm(
   questions: CreateFeedbackFormQuestion[],
   token: string | null
 ): Promise<ApiFeedbackForm> {
-  const res = await fetch(`${API_URL}/api/feedbackForm`, {
+  const res = await fetch(apiUrl("/api/feedbackForm"), {
     method: "POST",
-    headers: authHeaders(token),
+    ...authFetchOptions(token),
     body: JSON.stringify({
-      artworkID: artworkId,
+      artworkId: artworkId,
       questions,
     }),
   });
@@ -273,11 +319,11 @@ export async function submitFeedbackResponse(
   answersPayload: ResponseAnswerPayload[],
   token: string | null
 ): Promise<unknown> {
-  const res = await fetch(`${API_URL}/api/response`, {
+  const res = await fetch(apiUrl("/api/response"), {
     method: "POST",
-    headers: authHeaders(token),
+    ...authFetchOptions(token),
     body: JSON.stringify({
-      feedbackFormID: feedbackFormId,
+      feedbackFormId: feedbackFormId,
       answers: answersPayload,
     }),
   });
@@ -293,4 +339,27 @@ export async function submitFeedbackResponse(
   }
 
   return data;
+}
+
+export async function fetchReceivedFeedbackResponses(
+  feedbackFormId: string,
+  token: string | null
+): Promise<ApiFeedbackResponse[]> {
+  if (!feedbackFormId) {
+    return [];
+  }
+
+  const res = await fetch(
+    apiUrl(
+      `/api/response?feedbackFormId=${encodeURIComponent(feedbackFormId)}&ownerView=true`
+    ),
+    authFetchOptions(token)
+  );
+
+  const data = (await res.json().catch(() => null)) as unknown;
+  if (!res.ok || !Array.isArray(data)) {
+    return [];
+  }
+
+  return data as ApiFeedbackResponse[];
 }
