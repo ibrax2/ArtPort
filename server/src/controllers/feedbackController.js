@@ -173,6 +173,195 @@ export const createFeedbackForm = async (req, res) => {
   }
 };
 
+// @desc    Update a feedback form with questions and optional MCQ options
+// @route   PUT /api/feedbackForm/:id
+// @access  Private
+export const updateFeedbackForm = async (req, res) => {
+  const { questions } = req.body;
+  const formId = req.params.id;
+  const authUserId = String(req.user._id);
+
+  if (!isObjectId(formId)) {
+    return res.status(400).json({ message: "Invalid feedback form id" });
+  }
+
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "questions must be a non-empty array" });
+  }
+
+  try {
+    const form = await FeedbackForm.findById(formId);
+
+    if (!form) {
+      return res.status(404).json({ message: "Feedback form not found" });
+    }
+
+    if (String(form.createdBy) !== authUserId) {
+      return res.status(403).json({
+        message: "You can only edit feedback forms that you created",
+      });
+    }
+
+    const existingQuestions = await Question.find({ feedbackId: formId });
+    const existingQuestionIds = new Set(
+      existingQuestions.map((q) => String(q._id)),
+    );
+
+    const providedQuestionIds = new Set();
+    const questionUpdates = [];
+    const questionCreates = [];
+
+    for (const [index, item] of questions.entries()) {
+      const normalizedType = normalizeQuestionType(item.type);
+
+      if (!item.question || !normalizedType) {
+        return res.status(400).json({
+          message: `Question at index ${index} must include question and a valid type`,
+        });
+      }
+
+      const questionOrder = Number.isInteger(item.order)
+        ? item.order
+        : index + 1;
+
+      const ratingMin = toIntOrNull(item.rating?.ratingMin ?? item.ratingMin);
+      const ratingMax = toIntOrNull(item.rating?.ratingMax ?? item.ratingMax);
+
+      if (normalizedType === "rating") {
+        if (
+          ratingMin === null ||
+          ratingMax === null ||
+          ratingMin >= ratingMax
+        ) {
+          return res.status(400).json({
+            message: `Rating question at index ${index} must include valid ratingMin and ratingMax`,
+          });
+        }
+      }
+
+      const allowMultipleSelections = item.allowMultipleSelections !== false;
+
+      const questionUpdate = {
+        question: item.question,
+        type: normalizedType,
+        order: questionOrder,
+        ratingMin: normalizedType === "rating" ? ratingMin : null,
+        ratingMax: normalizedType === "rating" ? ratingMax : null,
+        allowMultipleSelections:
+          normalizedType === "mcq" ? allowMultipleSelections : true,
+      };
+
+      if (item._id && isObjectId(item._id)) {
+        const providedId = String(item._id);
+        providedQuestionIds.add(providedId);
+
+        if (existingQuestionIds.has(providedId)) {
+          questionUpdates.push({
+            id: item._id,
+            data: questionUpdate,
+            optionInput: item.Options || item.options || [],
+            normalizedType,
+            index,
+          });
+        } else {
+          return res.status(400).json({
+            message: `Question at index ${index} has invalid _id that does not belong to this form`,
+          });
+        }
+      } else {
+        questionCreates.push({
+          data: questionUpdate,
+          optionInput: item.Options || item.options || [],
+          normalizedType,
+          index,
+        });
+      }
+    }
+
+    const questionIdsToDelete = Array.from(existingQuestionIds).filter(
+      (id) => !providedQuestionIds.has(id),
+    );
+
+    if (questionIdsToDelete.length > 0) {
+      await Option.deleteMany({ questionId: { $in: questionIdsToDelete } });
+      await Question.deleteMany({ _id: { $in: questionIdsToDelete } });
+    }
+
+    for (const update of questionUpdates) {
+      await Question.findByIdAndUpdate(update.id, update.data);
+
+      if (update.normalizedType === "mcq") {
+        const optionInput = update.optionInput;
+
+        if (!Array.isArray(optionInput) || optionInput.length === 0) {
+          return res.status(400).json({
+            message: `MCQ question at index ${update.index} must include a non-empty options array`,
+          });
+        }
+
+        const optionDocs = optionInput.map((opt, optionIndex) => ({
+          questionId: update.id,
+          option: opt.Option || opt.option,
+          order: Number.isInteger(opt.order) ? opt.order : optionIndex + 1,
+        }));
+
+        const hasInvalidOption = optionDocs.some((opt) => !opt.option);
+
+        if (hasInvalidOption) {
+          return res.status(400).json({
+            message: `Each option in MCQ question at index ${update.index} must include Option/option`,
+          });
+        }
+
+        await Option.deleteMany({ questionId: update.id });
+        await Option.insertMany(optionDocs);
+      } else {
+        await Option.deleteMany({ questionId: update.id });
+      }
+    }
+
+    for (const create of questionCreates) {
+      const createdQuestion = await Question.create({
+        feedbackId: formId,
+        ...create.data,
+      });
+
+      if (create.normalizedType === "mcq") {
+        const optionInput = create.optionInput;
+
+        if (!Array.isArray(optionInput) || optionInput.length === 0) {
+          return res.status(400).json({
+            message: `MCQ question at index ${create.index} must include a non-empty options array`,
+          });
+        }
+
+        const optionDocs = optionInput.map((opt, optionIndex) => ({
+          questionId: createdQuestion._id,
+          option: opt.Option || opt.option,
+          order: Number.isInteger(opt.order) ? opt.order : optionIndex + 1,
+        }));
+
+        const hasInvalidOption = optionDocs.some((opt) => !opt.option);
+
+        if (hasInvalidOption) {
+          return res.status(400).json({
+            message: `Each option in MCQ question at index ${create.index} must include Option/option`,
+          });
+        }
+
+        await Option.insertMany(optionDocs);
+      }
+    }
+
+    const updated = await getFeedbackFormByIdInternal(formId);
+    return res.json(updated);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    List feedback forms (optionally filter by artworkId)
 // @route   GET /api/feedbackForm?artworkId=<id>&userId=<id>
 // @access  Private
