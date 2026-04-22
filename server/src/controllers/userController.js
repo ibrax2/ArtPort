@@ -263,20 +263,20 @@ export const updateUser = async (req, res) => {
       if (req.body.username.trim() === "")      return res.status(400).json({ message: "Username cannot be empty" });
       
       // Check if the username is already taken by another user (excluding current user)
-      const usernameExists = await User.findOne({ username: trimmedUsername });
+      const usernameExists = await User.findOne({ username: req.body.username.trim() });
       if (usernameExists && String(usernameExists._id) !== String(req.user._id)) {
         return res.status(400).json({ message: "User with this username already exists" });
       }
 
       // Good to update username if no issues detected.
-      user.username = req.body.username;
+      user.username = req.body.username.trim();
     }
 
     if (req.body.email) {
       if (req.body.email.trim() === "") return res.status(400).json({ message: "Email cannot be empty" });
 
       // Check if the email is already taken by another user (excluding current user)
-      const emailExists = await User.findOne({ email: trimmedEmail });
+      const emailExists = await User.findOne({ email: req.body.email.trim() });
       if (emailExists && String(emailExists._id) !== String(req.user._id)) {
         return res.status(400).json({ message: "User with this email already exists" });
       }
