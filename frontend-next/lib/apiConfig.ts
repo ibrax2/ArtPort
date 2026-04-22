@@ -1,6 +1,11 @@
 export function getApiBaseUrl(): string {
   if (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+    let url = process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, "");
+    // Ensure the URL has a protocol
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = `https://${url}`;
+    }
+    return url;
   }
   return "http://localhost:5000";
 }
