@@ -92,19 +92,25 @@ export const searchArtworks = async (req, res) => {
           compound: {
             should: [
               {
+                // Title matches should be ranked higher than description matches, so we can boost them.
                 text: {
                   query: query,
                   path: "title",
-                  score: { boost: { value: 2 } },
-                },
+                  score: { boost: { value: 10 } },
+                  fuzzy: { maxEdits: 2 }
+                }
               },
               {
                 text: {
                   query: query,
                   path: "description",
+                  fuzzy: { maxEdits: 2 }
+
                 },
               },
             ],
+            // At least one of the conditions (title or description match) must be satisfied for a document to be included in the results.
+            minimumShouldMatch: 1, 
           },
         },
       },
