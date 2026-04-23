@@ -94,12 +94,18 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User with this username already exists" });
     }
 
-    const passwordStrengthRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+]{8,}$/;
-    // The password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, and one number.
-    // Special characters ('!@#$%^&*()_+') are allowed but not required.
+    // Check password for invalid characters (only allow letters, numbers, and certain special characters)
+    const passwordCharactersRegex = /^[A-Za-z\d!?@#$%^&*()_+-=]{8,}$/;
+    if (!passwordCharactersRegex.test(password)) {
+      return res.status(400)
+        .json({ message: "Password contains invalid characters. Please use only letters, numbers, and the following special characters: !?@#$%^&*()_+-=" });
+    }
+
+    // Check password strength (at least 8 characters, including uppercase, lowercase, and numbers)
+    const passwordStrengthRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d!?@#$%^&*()_+-=]{8,}$/;
     if (!passwordStrengthRegex.test(password)) {
       return res.status(400)
-        .json({ message: "Password must be at least 8 characters long and include both uppercase and lowercase letters and numbers." });
+        .json({ message: "Password is too weak. It must be at least 8 characters long and include both uppercase and lowercase letters and numbers." });
     }
 
     // Hash password with bcrypt (10 salt rounds)
