@@ -72,8 +72,6 @@ export const registerUser = async (req, res) => {
     const trimmedUsername = username.trim();
     const trimmedEmail = email.trim();
 
-    // TODO: Check password strength and enforce requirements (e.g. min length, special characters) for better security
-
     if (!trimmedUsername || !trimmedEmail || !password) {
       return res.status(400).json({ message: "Username, email, and password are required" });
     }
@@ -94,6 +92,14 @@ export const registerUser = async (req, res) => {
 
     if (usernameExists) {
       return res.status(400).json({ message: "User with this username already exists" });
+    }
+
+    const passwordStrengthRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+]{8,}$/;
+    // The password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, and one number.
+    // Special characters ('!@#$%^&*()_+') are allowed but not required.
+    if (!passwordStrengthRegex.test(password)) {
+      return res.status(400)
+        .json({ message: "Password must be at least 8 characters long and include both uppercase and lowercase letters and numbers." });
     }
 
     // Hash password with bcrypt (10 salt rounds)
