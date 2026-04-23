@@ -100,14 +100,20 @@ export const registerUser = async (req, res) => {
         parentFolderId: rootFolder._id,
         isPublic: true,
       });
+      // Add the folder ID to the root folder's subfolderIds
+      rootFolder.subfolderIds.push(rootFolder._id);
+      await rootFolder.save();
 
-      // Create "Archive" folder
+      // Create "Bookmarks" folder
       await Folder.create({
         userId: user._id,
-        folderName: "Archive",
+        folderName: "Bookmarks",
         parentFolderId: rootFolder._id,
         isPublic: false,
       });
+      // Add the folder ID to the root folder's subfolderIds
+      rootFolder.subfolderIds.push(rootFolder._id);
+      await rootFolder.save();
 
       // Update user with root folder reference
       user.rootFolderId = rootFolder._id;

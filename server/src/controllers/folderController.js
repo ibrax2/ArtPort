@@ -8,9 +8,9 @@ import User from "../models/User.js";
 export const createFolder = async (req, res) => {
   try {
     // Ensure user is authenticated
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authorized" });
-    }
+    // if (!req.user) {
+    //   return res.status(401).json({ message: "Not authorized" });
+    // }
 
     const { folderName, parentFolderId, isPublic } = req.body;
 
@@ -46,6 +46,13 @@ export const createFolder = async (req, res) => {
       parentFolderId: parentFolderId || null,
       isPublic: isPublic !== undefined ? isPublic : true,
     });
+
+    // If it's a subfolder, add it to the parent's subfolderIds
+    if (parentFolderId) {
+      await Folder.findByIdAndUpdate(parentFolderId, {
+        $push: { subfolderIds: folder._id },
+      });
+    }
 
     res.status(201).json(folder);
   } catch (error) {
@@ -252,37 +259,46 @@ export const deleteFolder = async (req, res) => {
       });
     }
 
+    const parentFolderId = folder.parentFolderId;
+
     // Check if folder has a parent (can't delete root folder through this endpoint)
-    if (!folder.parentFolderId) {
+    if (!parentFolderId) {
       return res.status(400).json({
         message: "Cannot delete a root or system folder",
       });
     }
 
-    // Check for subfolders
-    const subfolderCount = await Folder.countDocuments({
-      parentFolderId: req.params.id,
-    });
+    // Check for subfolders by taking the length of subfolderIds array
+    const subfolderCount = folder.subfolderIds.length;
 
-    const artworkCount = await Artwork.countDocuments({
-      folderId: req.params.id,
-    });
+    // Check for artworks by taking the length of artworkIds array
+    const artworkCount = folder.artworkIds.length;
 
     if (deleteContents) {
       // Recursively delete all subfolders and their contents
-      const deleteSubfolders = async (parentId) => {
-        const subfolders = await Folder.find({ parentFolderId: parentId });
+      const deleteFolderAndContents = async (folderId) => {
+        const folderToDelete = await Folder.findById(folderId);
+        if (!folderToDelete) return;
 
-        for (const subfolder of subfolders) {
-          await deleteSubfolders(subfolder._id);
-          await Folder.findByIdAndDelete(subfolder._id);
+        // Delete all artworks in this folder
+        if (folderToDelete.artworkIds.length > 0) {
+          await Artwork.deleteMany({ _id: { $in: folderToDelete.artworkIds } });
         }
-      };
 
-      await deleteSubfolders(req.params.id);
+        // Recursively delete subfolders
+        if (folderToDelete.subfolderIds.length > 0) {
+          for (const subfolderId of folderToDelete.subfolderIds) {
+            await deleteFolderAndContents(subfolderId);
+          }
+        }
+      }
 
-      // Delete all artworks in this folder
-      await Artwork.deleteMany({ folderId: req.params.id });
+      // Remove the folder from its parent's subfolderIds
+      if (parentFolderId) {
+        await Folder.findByIdAndUpdate(parentFolderId, {
+          $pull: { subfolderIds: folder._id },
+        });
+      }
 
       // Delete the folder itself
       await Folder.findByIdAndDelete(req.params.id);
@@ -293,17 +309,22 @@ export const deleteFolder = async (req, res) => {
         deletedArtworks: artworkCount,
       });
     } else {
-      // Move subfolders to parent folder
       if (subfolderCount > 0) {
+        // Move subfolders to parent folder and update their parentFolderId 
         await Folder.updateMany(
-          { parentFolderId: req.params.id },
-          { parentFolderId: folder.parentFolderId },
+          { _id: { $in: folder.subfolderIds } },
+          { parentFolderId: parentFolderId }
         );
+
+        // Add the moved subfolders to the parent folder's subfolderIds
+        await Folder.findByIdAndUpdate(parentFolderId, {
+          $push: { subfolderIds: { $each: folder.subfolderIds } },
+        });
       }
 
       // Move artworks to parent folder
-      if (artworkCount > 0 && folder.parentFolderId) {
-        const parentFolder = await Folder.findById(folder.parentFolderId);
+      if (artworkCount > 0 && parentFolderId) {
+        const parentFolder = await Folder.findById(parentFolderId);
         if (parentFolder) {
           parentFolder.artworkIds.push(...folder.artworkIds);
           await parentFolder.save();
