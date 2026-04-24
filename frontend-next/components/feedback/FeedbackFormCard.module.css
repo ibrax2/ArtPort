@@ -72,3 +72,10 @@
 .secondaryBtn:hover {
   background: rgba(0, 0, 0, 0.06);
 }
+
+.error {
+  margin: 0 0 8px;
+  color: #b91c1c;
+  font-size: 14px;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}

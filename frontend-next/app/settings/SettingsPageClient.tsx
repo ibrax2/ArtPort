@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { fetchCurrentUser } from "@/lib/currentUserApi";
 import { patchUserSettings } from "@/lib/userSettingsApi";
+import { sanitizeSingleLineText, TEXT_LIMITS } from "@/lib/textInput";
 
 import styles from "./settings.module.css";
 
@@ -53,6 +54,31 @@ export default function SettingsPageClient() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!userId) return;
+
+    const wantsPasswordChange =
+      form.currentPassword.length > 0 ||
+      form.newPassword.length > 0 ||
+      form.confirmNewPassword.length > 0;
+
+    if (wantsPasswordChange && !form.currentPassword) {
+      setStatus({ kind: "error", message: "Enter your current password to set a new one." });
+      return;
+    }
+
+    if (wantsPasswordChange && !form.newPassword) {
+      setStatus({ kind: "error", message: "Enter a new password." });
+      return;
+    }
+
+    if (wantsPasswordChange && !form.confirmNewPassword) {
+      setStatus({ kind: "error", message: "Confirm your new password." });
+      return;
+    }
+
+    if (wantsPasswordChange && form.newPassword !== form.confirmNewPassword) {
+      setStatus({ kind: "error", message: "New password and confirm password must match." });
+      return;
+    }
 
     setStatus({ kind: "saving", message: "Saving settings…" });
 
@@ -110,7 +136,12 @@ export default function SettingsPageClient() {
               id="username"
               className={styles.input}
               value={form.username}
-              onChange={(event) => updateField("username", event.target.value)}
+              onChange={(event) =>
+                updateField(
+                  "username",
+                  sanitizeSingleLineText(event.target.value, TEXT_LIMITS.username)
+                )
+              }
               maxLength={32}
               placeholder="Your display name"
             />

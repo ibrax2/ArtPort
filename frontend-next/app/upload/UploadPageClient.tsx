@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import UploadCard from "@/components/uploadcard";
 import { apiFetch } from "@/lib/apiClient";
 import { fetchCurrentUser } from "@/lib/currentUserApi";
+import { getApiErrorMessage } from "@/lib/apiErrorMessage";
 
 export default function UploadPageClient() {
   const router = useRouter();
@@ -34,9 +35,7 @@ export default function UploadPageClient() {
       _id?: string;
     };
     if (!res.ok) {
-      throw new Error(
-        typeof data.message === "string" ? data.message : "Upload failed"
-      );
+      throw new Error(getApiErrorMessage(data, "Upload failed"));
     }
     const id = data._id;
     if (!id) {

@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/apiClient";
 import { getClientAuthToken } from "@/lib/authSession";
+import { getApiErrorMessage } from "@/lib/apiErrorMessage";
 
 export async function patchUserBio(
   userId: string,
@@ -19,9 +20,7 @@ export async function patchUserBio(
   };
 
   if (!res.ok) {
-    throw new Error(
-      typeof data.message === "string" ? data.message : "Could not save bio"
-    );
+    throw new Error(getApiErrorMessage(data, "Could not save bio"));
   }
 
   return data;

@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { uploadImageToS3 } from "./imageUploadController.js";
 import { withUserDeliveryUrls } from "../utils/mediaDelivery.js";
+import { validationError } from "../utils/apiErrors.js";
 
 // Import profanity filter from outside package to check for inappropriate content in usernames and bios
 import { Profanity } from "@2toad/profanity";
@@ -26,6 +27,7 @@ const profanity = new Profanity({
 });
 
 const AUTH_COOKIE_NAME = process.env.AUTHCOOKIE_NAME || "artport_token";
+const USERNAME_ASCII_PATTERN = /^[A-Za-z0-9_]+$/;
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -97,20 +99,32 @@ export const registerUser = async (req, res) => {
     const { username, email, password } = req.body;
 
     // Truncate username and email to remove leading/trailing whitespace
-    const trimmedUsername = username.trim();
-    const trimmedEmail = email.trim();
+    const trimmedUsername = typeof username === "string" ? username.trim() : "";
+    const trimmedEmail = typeof email === "string" ? email.trim() : "";
 
     if (!trimmedUsername || !trimmedEmail || !password) {
-      return res
-        .status(400)
-        .json({ message: "Username, email, and password are required" });
+      return validationError(
+        res,
+        "AUTH_REQUIRED_FIELDS",
+        "Username, email, and password are required",
+      );
+    }
+
+    if (!USERNAME_ASCII_PATTERN.test(trimmedUsername)) {
+      return validationError(
+        res,
+        "USERNAME_ASCII_ONLY",
+        "Username must use English letters, numbers, and underscores only",
+      );
     }
 
     // Check for profanity in username, send message if found.
     if (profanity.exists(trimmedUsername)) {
-      return res
-        .status(400)
-        .json({ message: "Username contains inappropriate content" });
+      return validationError(
+        res,
+        "USERNAME_PROFANITY",
+        "Username contains inappropriate content",
+      );
     }
 
     // const userExists = await User.findOne({ email });
@@ -119,38 +133,40 @@ export const registerUser = async (req, res) => {
 
     // if (userExists) {
     if (emailExists) {
-      return res
-        .status(400)
-        .json({ message: "User with this email already exists" });
+      return validationError(
+        res,
+        "EMAIL_ALREADY_EXISTS",
+        "User with this email already exists",
+      );
     }
 
     if (usernameExists) {
-      return res
-        .status(400)
-        .json({ message: "User with this username already exists" });
+      return validationError(
+        res,
+        "USERNAME_ALREADY_EXISTS",
+        "User with this username already exists",
+      );
     }
 
     // Check password for invalid characters (only allow letters, numbers, and certain special characters)
     const passwordCharactersRegex = /^[A-Za-z\d!?@#$%^&*()_+-=]{8,}$/;
     if (!passwordCharactersRegex.test(password)) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Password contains invalid characters. Please use only letters, numbers, and the following special characters: !?@#$%^&*()_+-=",
-        });
+      return validationError(
+        res,
+        "PASSWORD_INVALID_CHARACTERS",
+        "Password contains invalid characters. Please use only letters, numbers, and the following special characters: !?@#$%^&*()_+-=",
+      );
     }
 
     // Check password strength (at least 8 characters, including uppercase, lowercase, and numbers)
     const passwordStrengthRegex =
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)[A-Za-z\d!?@#$%^&*()_+-=]{8,}$/;
     if (!passwordStrengthRegex.test(password)) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Password is too weak. It must be at least 8 characters long and include both uppercase and lowercase letters and numbers.",
-        });
+      return validationError(
+        res,
+        "PASSWORD_WEAK",
+        "Password is too weak. It must be at least 8 characters long and include both uppercase and lowercase letters and numbers.",
+      );
     }
 
     // Hash password with bcrypt (10 salt rounds)
@@ -328,30 +344,52 @@ export const updateUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (req.body.username) {
+    if (Object.prototype.hasOwnProperty.call(req.body, "username")) {
+      const requestedUsername =
+        typeof req.body.username === "string" ? req.body.username.trim() : "";
+
+      if (!requestedUsername) {
+        return validationError(
+          res,
+          "USERNAME_REQUIRED",
+          "Username cannot be empty",
+        );
+      }
+
+      if (!USERNAME_ASCII_PATTERN.test(requestedUsername)) {
+        return validationError(
+          res,
+          "USERNAME_ASCII_ONLY",
+          "Username must use English letters, numbers, and underscores only",
+        );
+      }
+
       // Check for profanity in username, send message if found.
-      if (profanity.exists(req.body.username))
-        return res
-          .status(400)
-          .json({ message: "Username contains inappropriate content" });
-      if (req.body.username.trim() === "")
-        return res.status(400).json({ message: "Username cannot be empty" });
+      if (profanity.exists(requestedUsername)) {
+        return validationError(
+          res,
+          "USERNAME_PROFANITY",
+          "Username contains inappropriate content",
+        );
+      }
 
       // Check if the username is already taken by another user (excluding current user)
       const usernameExists = await User.findOne({
-        username: req.body.username.trim(),
+        username: requestedUsername,
       });
       if (
         usernameExists &&
         String(usernameExists._id) !== String(req.user._id)
       ) {
-        return res
-          .status(400)
-          .json({ message: "User with this username already exists" });
+        return validationError(
+          res,
+          "USERNAME_ALREADY_EXISTS",
+          "User with this username already exists",
+        );
       }
 
       // Good to update username if no issues detected.
-      user.username = req.body.username.trim();
+      user.username = requestedUsername;
     }
 
     if (req.body.email) {
@@ -380,15 +418,19 @@ export const updateUser = async (req, res) => {
       user.isPrivate = isPrivate;
     }
 
-    if (req.body.bio) {
+    if (Object.prototype.hasOwnProperty.call(req.body, "bio")) {
+      const requestedBio = typeof req.body.bio === "string" ? req.body.bio : "";
+
       // Check for profanity in bio, send message if found.
-      if (profanity.exists(req.body.bio)) {
-        return res
-          .status(400)
-          .json({ message: "Bio contains inappropriate content" });
+      if (profanity.exists(requestedBio)) {
+        return validationError(
+          res,
+          "BIO_PROFANITY",
+          "Bio contains inappropriate content",
+        );
       }
       // Good to update bio if no profanity detected.
-      user.bio = req.body.bio;
+      user.bio = requestedBio;
     }
 
     if (req.body.newPassword) {

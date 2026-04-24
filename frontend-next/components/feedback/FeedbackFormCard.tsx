@@ -101,6 +101,7 @@ export default function FeedbackFormCard({
 
   const handleSubmit: FormOnSubmit = async (e) => {
     e.preventDefault();
+
     const missingRequired = config.questions.filter((q) => {
       if (!q.required) return false;
       return !isQuestionAnswered(q, answers[q.id]);
@@ -279,7 +280,9 @@ export default function FeedbackFormCard({
             })}
           </div>
           {submitError ? (
-            <p style={{ color: "#b91c1c", margin: "0 0 8px" }}>{submitError}</p>
+            <p className={styles.error} role="alert">
+              {submitError}
+            </p>
           ) : null}
 
           <div className={styles.actions}>

@@ -8,8 +8,11 @@ import {
   type ArtworkFeedItem,
 } from "@/lib/artworkApi";
 
+const USER_STATE_EVENT = "artport-user-updated";
+
 export default function FrontPage() {
   const [posts, setPosts] = useState<ArtworkFeedItem[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,6 +24,20 @@ export default function FrontPage() {
 
     return () => {
       cancelled = true;
+    };
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const handleUserStateChange = () => {
+      setRefreshKey((value) => value + 1);
+    };
+
+    window.addEventListener(USER_STATE_EVENT, handleUserStateChange);
+    window.addEventListener("storage", handleUserStateChange);
+
+    return () => {
+      window.removeEventListener(USER_STATE_EVENT, handleUserStateChange);
+      window.removeEventListener("storage", handleUserStateChange);
     };
   }, []);
 

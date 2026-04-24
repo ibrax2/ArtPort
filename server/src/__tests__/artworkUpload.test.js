@@ -17,7 +17,8 @@ jest.unstable_mockModule("../controllers/imageUploadController.js", () => ({
   uploadImageToS3: mockUploadImageToS3,
 }));
 
-const { createArtwork, getArtworks } = await import("../controllers/artworkController.js");
+const { createArtwork, getArtworks } =
+  await import("../controllers/artworkController.js");
 
 describe("Artwork Controller - Upload functionality", () => {
   let req, res;
@@ -155,6 +156,61 @@ describe("Artwork Controller - Upload functionality", () => {
         expect.objectContaining({ _id: "public-art" }),
       ]);
       expect(res.json.mock.calls[0][0]).toHaveLength(1);
+    });
+
+    it("should include the authenticated user's own private artworks", async () => {
+      const ownPrivateArtwork = {
+        _id: "private-art",
+        title: "Hidden Work",
+        filePath: "https://example.com/private.jpg",
+        userId: {
+          _id: "user-private",
+          username: "hiddenArtist",
+          profilePictureUrl: "https://example.com/avatar.jpg",
+          isPrivate: true,
+        },
+      };
+      const otherPrivateArtwork = {
+        _id: "other-private-art",
+        title: "Someone Else's Hidden Work",
+        filePath: "https://example.com/private-2.jpg",
+        userId: {
+          _id: "other-private-user",
+          username: "otherHiddenArtist",
+          profilePictureUrl: "https://example.com/avatar2.jpg",
+          isPrivate: true,
+        },
+      };
+      const publicArtwork = {
+        _id: "public-art",
+        title: "Visible Work",
+        filePath: "https://example.com/public.jpg",
+        userId: {
+          _id: "user-public",
+          username: "openArtist",
+          profilePictureUrl: "https://example.com/avatar3.jpg",
+          isPrivate: false,
+        },
+      };
+
+      req.user = { _id: "user-private" };
+      mockArtworkFind.mockReturnValue({
+        populate: jest
+          .fn()
+          .mockResolvedValue([
+            ownPrivateArtwork,
+            otherPrivateArtwork,
+            publicArtwork,
+          ]),
+      });
+
+      await getArtworks(req, res);
+
+      expect(res.json).toHaveBeenCalledWith([
+        expect.objectContaining({ _id: "private-art" }),
+        expect.objectContaining({ _id: "public-art" }),
+      ]);
+      expect(res.json.mock.calls[0][0]).toHaveLength(2);
     });
   });
 });

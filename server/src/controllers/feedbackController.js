@@ -5,6 +5,25 @@ import Option from "../models/Option.js";
 import Response from "../models/Response.js";
 import Answer from "../models/Answer.js";
 import User from "../models/User.js";
+import { Profanity } from "@2toad/profanity";
+import { validationError } from "../utils/apiErrors.js";
+
+const profanity = new Profanity({
+  languages: [
+    "ar",
+    "zh",
+    "en",
+    "fr",
+    "de",
+    "hi",
+    "it",
+    "ja",
+    "ko",
+    "pt",
+    "ru",
+    "es",
+  ],
+});
 
 const isObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
@@ -100,6 +119,24 @@ export const createFeedbackForm = async (req, res) => {
         });
       }
 
+      if (profanity.exists(String(item.question))) {
+        await cleanupFormTree(form._id);
+        return validationError(
+          res,
+          "FEEDBACK_QUESTION_PROFANITY",
+          `Question at index ${index} contains inappropriate content`,
+        );
+      }
+
+      if (item.detail && profanity.exists(String(item.detail))) {
+        await cleanupFormTree(form._id);
+        return validationError(
+          res,
+          "FEEDBACK_DETAIL_PROFANITY",
+          `Question help text at index ${index} contains inappropriate content`,
+        );
+      }
+
       const questionOrder = Number.isInteger(item.order)
         ? item.order
         : index + 1;
@@ -156,6 +193,18 @@ export const createFeedbackForm = async (req, res) => {
           return res.status(400).json({
             message: `Each option in MCQ question at index ${index} must include Option/option`,
           });
+        }
+
+        const profaneOption = optionDocs.find((opt) =>
+          profanity.exists(String(opt.option)),
+        );
+        if (profaneOption) {
+          await cleanupFormTree(form._id);
+          return validationError(
+            res,
+            "FEEDBACK_OPTION_PROFANITY",
+            `Option text in question at index ${index} contains inappropriate content`,
+          );
         }
 
         await Option.insertMany(optionDocs);
@@ -220,6 +269,22 @@ export const updateFeedbackForm = async (req, res) => {
         return res.status(400).json({
           message: `Question at index ${index} must include question and a valid type`,
         });
+      }
+
+      if (profanity.exists(String(item.question))) {
+        return validationError(
+          res,
+          "FEEDBACK_QUESTION_PROFANITY",
+          `Question at index ${index} contains inappropriate content`,
+        );
+      }
+
+      if (item.detail && profanity.exists(String(item.detail))) {
+        return validationError(
+          res,
+          "FEEDBACK_DETAIL_PROFANITY",
+          `Question help text at index ${index} contains inappropriate content`,
+        );
       }
 
       const questionOrder = Number.isInteger(item.order)
@@ -315,6 +380,17 @@ export const updateFeedbackForm = async (req, res) => {
           });
         }
 
+        const profaneOption = optionDocs.find((opt) =>
+          profanity.exists(String(opt.option)),
+        );
+        if (profaneOption) {
+          return validationError(
+            res,
+            "FEEDBACK_OPTION_PROFANITY",
+            `Option text in question at index ${update.index} contains inappropriate content`,
+          );
+        }
+
         await Option.deleteMany({ questionId: update.id });
         await Option.insertMany(optionDocs);
       } else {
@@ -349,6 +425,17 @@ export const updateFeedbackForm = async (req, res) => {
           return res.status(400).json({
             message: `Each option in MCQ question at index ${create.index} must include Option/option`,
           });
+        }
+
+        const profaneOption = optionDocs.find((opt) =>
+          profanity.exists(String(opt.option)),
+        );
+        if (profaneOption) {
+          return validationError(
+            res,
+            "FEEDBACK_OPTION_PROFANITY",
+            `Option text in question at index ${create.index} contains inappropriate content`,
+          );
         }
 
         await Option.insertMany(optionDocs);
@@ -666,6 +753,15 @@ export const createResponse = async (req, res) => {
         });
       } else {
         const textValue = answerItem.textValue || answerItem.value || "";
+
+        if (profanity.exists(String(textValue))) {
+          await Response.findByIdAndDelete(response._id);
+          return validationError(
+            res,
+            "FEEDBACK_TEXT_PROFANITY",
+            `Text answer at index ${index} contains inappropriate content`,
+          );
+        }
 
         answerDocs.push({
           responseId: response._id,

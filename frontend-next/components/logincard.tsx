@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/apiClient";
 import { persistAuthSession } from "@/lib/authSession";
 import { sanitizeSingleLineText, TEXT_LIMITS } from "@/lib/textInput";
+import { getApiErrorMessage } from "@/lib/apiErrorMessage";
 const USER_STATE_EVENT = "artport-user-updated";
 type FormOnSubmit = NonNullable<ComponentProps<"form">["onSubmit"]>;
 
@@ -47,7 +48,12 @@ const LoginCard: React.FC<LoginCardProps> = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(
+          getApiErrorMessage(
+            data as { code?: string; message?: string },
+            "Login failed"
+          )
+        );
       }
 
       persistAuthSession(data.token, {
@@ -93,7 +99,12 @@ const LoginCard: React.FC<LoginCardProps> = ({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(
+          getApiErrorMessage(
+            data as { code?: string; message?: string },
+            "Registration failed"
+          )
+        );
       }
 
       persistAuthSession(data.token, {

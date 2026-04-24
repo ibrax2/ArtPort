@@ -1,12 +1,26 @@
 import Folder from "../models/Folder.js";
 import Artwork from "../models/Artwork.js";
 import User from "../models/User.js";
+import { validationError } from "../utils/apiErrors.js";
 
 // Import profanity filter from outside package to check for inappropriate content in folder names
-import { Profanity } from '@2toad/profanity';
+import { Profanity } from "@2toad/profanity";
 const profanity = new Profanity({
-    // Include multiple languages for better coverage, but can be customized based on target audience
-    languages: ['ar', 'zh', 'en', 'fr', 'de', 'hi', 'it', 'ja', 'ko', 'pt', 'ru', 'es'],
+  // Include multiple languages for better coverage, but can be customized based on target audience
+  languages: [
+    "ar",
+    "zh",
+    "en",
+    "fr",
+    "de",
+    "hi",
+    "it",
+    "ja",
+    "ko",
+    "pt",
+    "ru",
+    "es",
+  ],
 });
 
 // @desc    Create a new folder
@@ -22,13 +36,27 @@ export const createFolder = async (req, res) => {
     const { folderName, parentFolderId, isPublic } = req.body;
 
     const truncatedFolderName = folderName.trim();
-    if (!truncatedFolderName) return res.status(400).json({ message: "Folder name is required" });
-    if (profanity.exists(truncatedFolderName)) return res.status(400).json({ message: "Folder name contains inappropriate content" });
+    if (!truncatedFolderName) {
+      return validationError(
+        res,
+        "FOLDER_NAME_REQUIRED",
+        "Folder name is required",
+      );
+    }
+    if (profanity.exists(truncatedFolderName)) {
+      return validationError(
+        res,
+        "FOLDER_NAME_PROFANITY",
+        "Folder name contains inappropriate content",
+      );
+    }
 
     if (truncatedFolderName.length > 100) {
-      return res
-        .status(400)
-        .json({ message: "Folder name must be less than 100 characters" });
+      return validationError(
+        res,
+        "FOLDER_NAME_TOO_LONG",
+        "Folder name must be less than 100 characters",
+      );
     }
 
     // If parentFolderId is provided, verify it belongs to the user
@@ -41,7 +69,8 @@ export const createFolder = async (req, res) => {
 
       if (String(parentFolder.userId) !== String(req.user._id)) {
         return res.status(403).json({
-          message: "You do not have permission to create folders in this directory",
+          message:
+            "You do not have permission to create folders in this directory",
         });
       }
     }
@@ -64,7 +93,10 @@ export const createFolder = async (req, res) => {
 // @access  Public (but only show public folders or own private folders)
 export const getFolderById = async (req, res) => {
   try {
-    const folder = await Folder.findById(req.params.id).populate("userId", "username");
+    const folder = await Folder.findById(req.params.id).populate(
+      "userId",
+      "username",
+    );
 
     if (!folder) {
       return res.status(404).json({ message: "Folder not found" });
@@ -111,7 +143,9 @@ export const getFolderContents = async (req, res) => {
     // Get artworks stored in this folder
     const artworks = await Artwork.find({
       _id: { $in: folder.artworkIds },
-    }).select("_id title description filePath thumbnailPath uploadDate isPublic");
+    }).select(
+      "_id title description filePath thumbnailPath uploadDate isPublic",
+    );
 
     res.json({
       folder,
@@ -200,14 +234,28 @@ export const renameFolder = async (req, res) => {
 
     const { folderName } = req.body;
 
-    truncatedFolderName = folderName.trim();
-    if (!truncatedFolderName) return res.status(400).json({ message: "Folder name is required" });
-    if (profanity.exists(truncatedFolderName)) return res.status(400).json({ message: "Folder name contains inappropriate content" });
+    const truncatedFolderName = folderName.trim();
+    if (!truncatedFolderName) {
+      return validationError(
+        res,
+        "FOLDER_NAME_REQUIRED",
+        "Folder name is required",
+      );
+    }
+    if (profanity.exists(truncatedFolderName)) {
+      return validationError(
+        res,
+        "FOLDER_NAME_PROFANITY",
+        "Folder name contains inappropriate content",
+      );
+    }
 
     if (truncatedFolderName.length > 100) {
-      return res
-        .status(400)
-        .json({ message: "Folder name must be less than 100 characters" });
+      return validationError(
+        res,
+        "FOLDER_NAME_TOO_LONG",
+        "Folder name must be less than 100 characters",
+      );
     }
 
     const folder = await Folder.findById(req.params.id);
@@ -342,7 +390,9 @@ export const updateFolderPrivacy = async (req, res) => {
     const { isPublic } = req.body;
 
     if (isPublic === undefined) {
-      return res.status(400).json({ message: "isPublic parameter is required" });
+      return res
+        .status(400)
+        .json({ message: "isPublic parameter is required" });
     }
 
     const folder = await Folder.findById(req.params.id);

@@ -121,6 +121,7 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
       setSubmitError("Title is required.");
       return;
     }
+
     if (!onUpload) {
       return;
     }

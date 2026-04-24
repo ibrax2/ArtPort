@@ -137,7 +137,7 @@ function MePageContent() {
 
   const loadUserPosts = useCallback(() => {
     if (!userId) return;
-    fetchArtworks().then((data) => {
+    fetchArtworks({ auth: true }).then((data) => {
       const mapped = data
         .filter((artwork) => artworkMatchesUserId(artwork, userId))
         .map((artwork, index) => mapArtworkToProfileItem(artwork, index));

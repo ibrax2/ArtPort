@@ -478,6 +478,13 @@
   border-color: #f29f41;
 }
 
+.modal_error {
+  margin: -8px 0 0;
+  font-family: Inter, var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
 .modal_radio_group {
   display: flex;
   flex-direction: row;

@@ -9,6 +9,10 @@ import ProfilePostsGrid, {
   type ProfilePostItem,
 } from "@/components/ProfilePostsGrid";
 import { publicAsset } from "@/lib/paths";
+import {
+  sanitizeMultilineText,
+  sanitizeSingleLineText,
+} from "@/lib/textInput";
 
 import "./profilecard.css";
 
@@ -77,6 +81,7 @@ export default function ProfileCard({
   const [showAddFolder, setShowAddFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderVisibility, setNewFolderVisibility] = useState<"public" | "private">("public");
+  const [folderError, setFolderError] = useState("");
 
   const [bioDraft, setBioDraft] = useState(bio);
   const [editingBio, setEditingBio] = useState(false);
@@ -131,6 +136,7 @@ export default function ProfileCard({
 
   const handleBioSave = async () => {
     if (!onBioSave) return;
+
     setBioError("");
     setBioSaving(true);
     try {
@@ -201,7 +207,11 @@ export default function ProfileCard({
                   <textarea
                     className="profile_bio_textarea"
                     value={bioDraft}
-                    onChange={(e) => setBioDraft(e.target.value)}
+                    onChange={(e) =>
+                      setBioDraft(
+                        sanitizeMultilineText(e.target.value, 500)
+                      )
+                    }
                     maxLength={500}
                     rows={4}
                     placeholder="Tell visitors about your work…"
@@ -345,9 +355,19 @@ export default function ProfileCard({
               type="text"
               placeholder="e.g. Sketchbook"
               value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
+              onChange={(e) => {
+                setNewFolderName(
+                  sanitizeSingleLineText(e.target.value, 100)
+                );
+                setFolderError("");
+              }}
               autoFocus
             />
+            {folderError ? (
+              <p className="modal_error" role="alert">
+                {folderError}
+              </p>
+            ) : null}
 
             <div className="modal_radio_group">
               <label className="modal_radio_label">
@@ -380,6 +400,7 @@ export default function ProfileCard({
                   setShowAddFolder(false);
                   setNewFolderName("");
                   setNewFolderVisibility("public");
+                  setFolderError("");
                 }}
               >
                 Cancel
@@ -393,6 +414,7 @@ export default function ProfileCard({
                   setShowAddFolder(false);
                   setNewFolderName("");
                   setNewFolderVisibility("public");
+                  setFolderError("");
                 }}
               >
                 Add

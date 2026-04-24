@@ -71,6 +71,7 @@ export default function SearchBar({
       setFetchError("");
       return;
     }
+
     setLoading(true);
     setFetchError("");
     try {

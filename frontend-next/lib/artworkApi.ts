@@ -169,9 +169,12 @@ export function mapArtworkToProfileItem(
   };
 }
 
-export async function fetchArtworks(): Promise<ApiArtworkCommon[]> {
+export async function fetchArtworks(options: { auth?: boolean } = {}): Promise<ApiArtworkCommon[]> {
   try {
-    const res = await apiFetch("/api/artworks", { auth: false });
+    const res = await apiFetch("/api/artworks", {
+      auth: options.auth ?? false,
+      credentials: options.auth ? "include" : "omit",
+    });
     if (!res.ok) return [];
 
     const data = (await res.json().catch(() => [])) as unknown;

@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/apiClient";
 import { getClientAuthToken } from "@/lib/authSession";
+import { getApiErrorMessage } from "@/lib/apiErrorMessage";
 
 export type AccountSettingsUpdate = {
   username?: string;
@@ -27,9 +28,7 @@ export async function patchUserSettings(
   } & Record<string, unknown>;
 
   if (!res.ok) {
-    throw new Error(
-      typeof data.message === "string" ? data.message : "Could not save settings",
-    );
+    throw new Error(getApiErrorMessage(data, "Could not save settings"));
   }
 
   return data;

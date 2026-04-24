@@ -5,6 +5,7 @@ import type {
 import { apiUrl } from "@/lib/apiConfig";
 import { getClientAuthToken } from "@/lib/authSession";
 import { sanitizeMultilineText, TEXT_LIMITS } from "@/lib/textInput";
+import { getApiErrorMessage } from "@/lib/apiErrorMessage";
 
 export type ApiFeedbackFormQuestion = {
   _id: string;
@@ -72,9 +73,7 @@ export async function fetchFeedbackForm(
   } & Partial<ApiFeedbackForm>;
 
   if (!res.ok) {
-    throw new Error(
-      typeof data.message === "string" ? data.message : "Failed to load form"
-    );
+    throw new Error(getApiErrorMessage(data, "Failed to load form"));
   }
 
   if (!data._id || !Array.isArray(data.questions)) {
@@ -302,9 +301,7 @@ export async function createFeedbackForm(
   } & Partial<ApiFeedbackForm>;
 
   if (!res.ok) {
-    throw new Error(
-      typeof data.message === "string" ? data.message : "Failed to create form"
-    );
+    throw new Error(getApiErrorMessage(data, "Failed to create form"));
   }
 
   if (!data._id) {
@@ -331,11 +328,9 @@ export async function submitFeedbackResponse(
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const msg =
-      typeof (data as { message?: string }).message === "string"
-        ? (data as { message: string }).message
-        : "Submit failed";
-    throw new Error(msg);
+    throw new Error(
+      getApiErrorMessage(data as { code?: string; message?: string }, "Submit failed"),
+    );
   }
 
   return data;
