@@ -46,8 +46,7 @@ const parseBoolean = (value) => {
 const isAllowedPasswordCharacters = (password) =>
   PASSWORD_ALLOWED_PATTERN.test(password);
 
-const isStrongPassword = (password) =>
-  PASSWORD_STRONG_PATTERN.test(password);
+const isStrongPassword = (password) => PASSWORD_STRONG_PATTERN.test(password);
 
 // @desc    Get all users
 // @route   GET /api/users

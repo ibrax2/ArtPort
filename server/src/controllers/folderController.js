@@ -170,10 +170,14 @@ export const getUserFolderTree = async (req, res) => {
     }
 
     const folders = await Folder.find({ userId: req.params.id })
-      .select("_id folderName isPublic createdAt updatedAt parentFolderId artworkIds")
+      .select(
+        "_id folderName isPublic createdAt updatedAt parentFolderId artworkIds",
+      )
       .lean();
 
-    const foldersById = new Map(folders.map((folder) => [String(folder._id), folder]));
+    const foldersById = new Map(
+      folders.map((folder) => [String(folder._id), folder]),
+    );
     const childrenByParentId = new Map();
 
     for (const folder of folders) {
@@ -209,12 +213,11 @@ export const getUserFolderTree = async (req, res) => {
       const folder = foldersById.get(String(folderId));
       if (!folder) return null;
 
-      const folderArtworks =
-        Array.isArray(folder.artworkIds)
-          ? folder.artworkIds
-              .map((id) => artworksById.get(String(id)))
-              .filter(Boolean)
-          : [];
+      const folderArtworks = Array.isArray(folder.artworkIds)
+        ? folder.artworkIds
+            .map((id) => artworksById.get(String(id)))
+            .filter(Boolean)
+        : [];
 
       const subfolders = (childrenByParentId.get(String(folder._id)) || [])
         .map((child) => buildFolderTree(child._id))
