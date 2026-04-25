@@ -62,7 +62,9 @@ export const getArtworks = async (req, res) => {
     const requestedUserId =
       typeof req.query.userId === "string" ? req.query.userId.trim() : "";
     const includePrivate =
-      String(req.query.includePrivate || "").trim().toLowerCase() === "true";
+      String(req.query.includePrivate || "")
+        .trim()
+        .toLowerCase() === "true";
 
     const publicUsers = await User.find({ isPrivate: { $ne: true } })
       .select("_id")
@@ -88,13 +90,9 @@ export const getArtworks = async (req, res) => {
       artworkQuery.isPublic = true;
     }
 
-    const artworks = await Artwork.find(artworkQuery).populate(
-      "userId",
-      "_id username profilePictureUrl isPrivate",
-    ).populate(
-      "folderId",
-      "_id userId isPublic folderName",
-    );
+    const artworks = await Artwork.find(artworkQuery)
+      .populate("userId", "_id username profilePictureUrl isPrivate")
+      .populate("folderId", "_id userId isPublic folderName");
 
     const shouldIncludePrivateFolderContent =
       Boolean(canViewPrivateRequestedUser) && includePrivate;
@@ -194,7 +192,8 @@ export const createArtwork = async (req, res) => {
       }
 
       if (
-        normalizeFolderName(selectedFolder.folderName) === SPECIAL_FOLDERS.BOOKMARKS
+        normalizeFolderName(selectedFolder.folderName) ===
+        SPECIAL_FOLDERS.BOOKMARKS
       ) {
         return res.status(400).json({
           message: "You cannot upload your own artwork directly to Bookmarks",
@@ -211,7 +210,8 @@ export const createArtwork = async (req, res) => {
       folderId: selectedFolder?._id || null,
       isPublic:
         selectedFolder &&
-        normalizeFolderName(selectedFolder.folderName) === SPECIAL_FOLDERS.ARCHIVE
+        normalizeFolderName(selectedFolder.folderName) ===
+          SPECIAL_FOLDERS.ARCHIVE
           ? false
           : true,
     });
@@ -247,13 +247,9 @@ export const createArtwork = async (req, res) => {
 export const getArtworkById = async (req, res) => {
   try {
     const currentUser = await getOptionalCurrentUser(req);
-    const artwork = await Artwork.findById(req.params.id).populate(
-      "userId",
-      "_id username profilePictureUrl",
-    ).populate(
-      "folderId",
-      "_id userId isPublic folderName",
-    );
+    const artwork = await Artwork.findById(req.params.id)
+      .populate("userId", "_id username profilePictureUrl")
+      .populate("folderId", "_id userId isPublic folderName");
 
     if (artwork) {
       if (
@@ -300,9 +296,14 @@ export const updateArtwork = async (req, res) => {
     }
 
     if (Object.prototype.hasOwnProperty.call(req.body, "title")) {
-      const nextTitle = typeof req.body.title === "string" ? req.body.title.trim() : "";
+      const nextTitle =
+        typeof req.body.title === "string" ? req.body.title.trim() : "";
       if (!nextTitle) {
-        return validationError(res, "ARTWORK_TITLE_REQUIRED", "Title is required");
+        return validationError(
+          res,
+          "ARTWORK_TITLE_REQUIRED",
+          "Title is required",
+        );
       }
       if (profanity.exists(nextTitle)) {
         return validationError(
@@ -316,7 +317,9 @@ export const updateArtwork = async (req, res) => {
 
     if (Object.prototype.hasOwnProperty.call(req.body, "description")) {
       const nextDescription =
-        typeof req.body.description === "string" ? req.body.description.trim() : "";
+        typeof req.body.description === "string"
+          ? req.body.description.trim()
+          : "";
       if (profanity.exists(nextDescription)) {
         return validationError(
           res,
@@ -343,7 +346,8 @@ export const updateArtwork = async (req, res) => {
           });
         }
         if (
-          normalizeFolderName(nextFolder.folderName) === SPECIAL_FOLDERS.BOOKMARKS
+          normalizeFolderName(nextFolder.folderName) ===
+          SPECIAL_FOLDERS.BOOKMARKS
         ) {
           return res.status(400).json({
             message: "You cannot move your own artwork into Bookmarks",

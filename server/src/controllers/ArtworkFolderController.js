@@ -122,10 +122,7 @@ export const copyArtworkToFolder = async (req, res) => {
     }
 
     // Check if user can access this artwork (public or user owns it)
-    if (
-      !artwork.isPublic &&
-      String(artwork.userId) !== String(req.user._id)
-    ) {
+    if (!artwork.isPublic && String(artwork.userId) !== String(req.user._id)) {
       return res.status(403).json({
         message: "You do not have permission to access this artwork",
       });

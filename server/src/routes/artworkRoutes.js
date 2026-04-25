@@ -28,7 +28,10 @@ router
     createArtwork,
   );
 
-router.route("/:id").get(optionalProtect, getArtworkById).patch(protect, updateArtwork);
+router
+  .route("/:id")
+  .get(optionalProtect, getArtworkById)
+  .patch(protect, updateArtwork);
 router.route("/:id/move").post(protect, moveArtworkToFolder);
 router.route("/:id/copy").post(protect, copyArtworkToFolder);
 router.route("/:id/bookmark").post(protect, saveArtworkToBookmarks);
