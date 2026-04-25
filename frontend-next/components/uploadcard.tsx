@@ -19,9 +19,14 @@ const THUMB_ASPECT = 1;
 export type UploadCardProps = {
   onUpload?: (formData: FormData) => Promise<void> | void;
   userId?: string;
+  folderOptions?: Array<{
+    id: string;
+    label: string;
+    isPublic: boolean;
+  }>;
 };
 
-export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
+export default function UploadCardExact({ onUpload, userId, folderOptions = [] }: UploadCardProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
   const [artworkDisplayUrl, setArtworkDisplayUrl] = useState("");
@@ -29,6 +34,7 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
   const [thumbnailDisplayUrl, setThumbnailDisplayUrl] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [selectedFolderId, setSelectedFolderId] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [adjustingThumbnail, setAdjustingThumbnail] = useState(false);
@@ -121,6 +127,10 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
       setSubmitError("Title is required.");
       return;
     }
+    if (!selectedFolderId) {
+      setSubmitError("Choose a destination folder.");
+      return;
+    }
 
     if (!onUpload) {
       return;
@@ -145,6 +155,7 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
       "thumbnail.jpg"
     );
     if (userId) formData.append("userId", userId);
+    formData.append("folderId", selectedFolderId);
     formData.append("title", safeTitle);
     if (safeDescription) formData.append("description", safeDescription);
 
@@ -166,6 +177,7 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
     setSubmitError("");
     setTitle("");
     setDescription("");
+    setSelectedFolderId("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -174,6 +186,7 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
   const canSubmit = Boolean(
     selectedFile &&
       thumbnailBlob &&
+      selectedFolderId &&
       title.trim().length > 0 &&
       onUpload &&
       userId
@@ -281,6 +294,29 @@ export default function UploadCardExact({ onUpload, userId }: UploadCardProps) {
           required
           aria-required="true"
         />
+      </div>
+
+      <div className="description-box">
+        <label htmlFor="folderSelect" className="description-label">
+          Folder <span className="title-required" aria-hidden>*</span>
+        </label>
+        <select
+          id="folderSelect"
+          className="text-input"
+          value={selectedFolderId}
+          onChange={(e) => {
+            setSelectedFolderId(e.target.value);
+            setSubmitError("");
+          }}
+          required
+        >
+          <option value="">Select a folder</option>
+          {folderOptions.map((folder) => (
+            <option key={folder.id} value={folder.id}>
+              {folder.label}{folder.isPublic ? "" : " (private)"}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="description-box">

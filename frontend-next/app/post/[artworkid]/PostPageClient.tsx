@@ -8,9 +8,12 @@ import {
   artworkArtistFromDetail,
   artworkFullImageUrl,
   fetchArtworkForPost,
+  bookmarkArtwork,
+  unbookmarkArtwork,
   resolveApiAssetUrl,
   fetchArtworks,
   mapArtworkToProfileItem,
+  updateArtwork,
   type ApiArtworkDetail,
 } from "@/lib/artworkApi";
 import {
@@ -25,6 +28,49 @@ import { getClientAuthToken } from "@/lib/authSession";
 import { fetchCurrentUser } from "@/lib/currentUserApi";
 import type { FeedbackFormConfig } from "@/types/feedback";
 import { USER_STATE_EVENT } from "@/lib/userStateEvent";
+import { fetchUserFolderTree } from "@/lib/folderApi";
+
+type FolderOption = { id: string; label: string };
+
+const normalizeFolderName = (value: string) => value.trim().toLowerCase();
+
+function flattenOwnerFolders(
+  node: {
+    subfolders: Array<{
+      _id: string;
+      folderName: string;
+      subfolders: unknown[];
+    }>;
+  },
+  depth = 0,
+): FolderOption[] {
+  const options: FolderOption[] = [];
+  for (const folder of node.subfolders || []) {
+    if (normalizeFolderName(folder.folderName) !== "bookmarks") {
+      options.push({
+        id: String(folder._id),
+        label: `${"  ".repeat(depth)}${folder.folderName}`,
+      });
+    }
+
+    options.push(
+      ...flattenOwnerFolders(
+        {
+          subfolders: Array.isArray(folder.subfolders)
+            ? (folder.subfolders as Array<{
+                _id: string;
+                folderName: string;
+                subfolders: unknown[];
+              }>)
+            : [],
+        },
+        depth + 1,
+      ),
+    );
+  }
+
+  return options;
+}
 
 type Props = {
   segment: string;
@@ -43,6 +89,10 @@ export default function PostPageClient({ segment }: Props) {
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     Boolean(getClientAuthToken())
   );
+  const [ownerFolderOptions, setOwnerFolderOptions] = useState<FolderOption[]>([]);
+  const [selectedFolderId, setSelectedFolderId] = useState("");
+  const [currentFolderName, setCurrentFolderName] = useState("");
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     const syncAuth = () => setIsAuthenticated(Boolean(getClientAuthToken()));
@@ -84,6 +134,72 @@ export default function PostPageClient({ segment }: Props) {
           Boolean(artist.userId) &&
           String(currentUser?._id) === String(artist.userId);
         setIsOwnerArtwork(isOwner);
+        
+        // Extract folder info
+        let folderId = "";
+        let folderName = "";
+        if (data.folderId) {
+          const folderData = data.folderId as any;
+          if (typeof folderData === "string") {
+            folderId = folderData;
+          } else if (typeof folderData === "object" && folderData._id) {
+            folderId = String(folderData._id);
+            folderName = folderData.folderName || "";
+          }
+        }
+        setSelectedFolderId(folderId);
+        setCurrentFolderName(folderName);
+
+        if (isOwner && currentUser?._id) {
+          fetchUserFolderTree(String(currentUser._id))
+            .then((tree) => {
+              if (cancelled || !tree) return;
+              setOwnerFolderOptions(flattenOwnerFolders(tree));
+            })
+            .catch(() => {
+              if (!cancelled) setOwnerFolderOptions([]);
+            });
+        }
+
+        // Check if artwork is bookmarked (for non-owners)
+        if (!isOwner && currentUser?._id && isAuthenticated) {
+          fetchUserFolderTree(String(currentUser._id))
+            .then((tree) => {
+              if (cancelled || !tree) return;
+              // Find bookmarks folder
+              interface FolderNode {
+                folderName?: string;
+                subfolders?: FolderNode[];
+                artworks?: Array<{ _id?: string }>;
+              }
+              const findBookmarksFolder = (node: FolderNode): FolderNode | null => {
+                if (
+                  node.folderName &&
+                  node.folderName.trim().toLowerCase() === "bookmarks"
+                ) {
+                  return node;
+                }
+                if (node.subfolders && Array.isArray(node.subfolders)) {
+                  for (const subfolder of node.subfolders) {
+                    const found = findBookmarksFolder(subfolder);
+                    if (found) return found;
+                  }
+                }
+                return null;
+              };
+
+              const bookmarksFolder = findBookmarksFolder(tree);
+              if (bookmarksFolder && bookmarksFolder.artworks) {
+                const isInBookmarks = bookmarksFolder.artworks.some(
+                  (artwork) => String(artwork._id) === String(data._id)
+                );
+                setIsBookmarked(isInBookmarks);
+              }
+            })
+            .catch(() => {
+              if (!cancelled) setIsBookmarked(false);
+            });
+        }
 
         if (artist.userId) {
           fetchArtworks({ userId: artist.userId }).then((allArtworks) => {
@@ -153,7 +269,7 @@ export default function PostPageClient({ segment }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [segment]);
+  }, [segment, isAuthenticated]);
 
   if (loading) {
     return (
@@ -200,6 +316,55 @@ export default function PostPageClient({ segment }: Props) {
       isAuthenticated={isAuthenticated}
       receivedResponses={receivedResponses}
       otherPosts={otherPosts}
+      artworkId={typeof artwork._id === "string" ? artwork._id : undefined}
+      onSaveToBookmarks={
+        !isOwnerArtwork
+          ? async () => {
+              if (!artwork._id) return;
+              await bookmarkArtwork(String(artwork._id));
+              setIsBookmarked(true);
+            }
+          : undefined
+      }
+      isBookmarked={isBookmarked}
+      onRemoveFromBookmarks={
+        !isOwnerArtwork
+          ? async () => {
+              if (!artwork._id) return;
+              await unbookmarkArtwork(String(artwork._id));
+              setIsBookmarked(false);
+            }
+          : undefined
+      }
+      folderOptions={ownerFolderOptions}
+      selectedFolderId={selectedFolderId}
+      currentFolderName={currentFolderName}
+      onMoveToFolder={
+        isOwnerArtwork
+          ? async (folderId: string) => {
+              if (!artwork._id) return;
+              const updated = await updateArtwork(String(artwork._id), {
+                folderId,
+              });
+              setArtwork(updated);
+              
+              // Extract folder info from updated response
+              let nextFolderId = "";
+              let nextFolderName = "";
+              const updatedFolderData = updated.folderId as any;
+              if (updatedFolderData) {
+                if (typeof updatedFolderData === "string") {
+                  nextFolderId = updatedFolderData;
+                } else if (typeof updatedFolderData === "object" && updatedFolderData._id) {
+                  nextFolderId = String(updatedFolderData._id);
+                  nextFolderName = updatedFolderData.folderName || "";
+                }
+              }
+              setSelectedFolderId(nextFolderId);
+              setCurrentFolderName(nextFolderName);
+            }
+          : undefined
+      }
     />
   );
 }

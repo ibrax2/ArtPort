@@ -32,6 +32,29 @@ export type ProfileCardProps = {
   onAvatarImageChange?: (blob: Blob) => Promise<void> | void;
   onBannerImageChange?: (blob: Blob) => Promise<void> | void;
   onBioSave?: (bio: string) => Promise<void> | void;
+  rootFolderId?: string;
+  collectionFolders?: Array<{
+    id: string;
+    label: string;
+    isPublic: boolean;
+  }>;
+  collectionsLoading?: boolean;
+  collectionsError?: string;
+  onLoadFolderContents?: (folderId: string) => Promise<{
+    id: string;
+    label: string;
+    isPublic: boolean;
+    subfolders: Array<{ id: string; label: string; isPublic: boolean }>;
+    artworks: ProfilePostItem[];
+  }>;
+  onCreateFolder?: (
+    folderName: string,
+    isPublic: boolean,
+    parentFolderId?: string,
+  ) => Promise<void> | void;
+  onRenameFolder?: (folderId: string, folderName: string) => Promise<void> | void;
+  onDeleteFolder?: (folderId: string, deleteContents?: boolean, moveContentsUp?: boolean) => Promise<void> | void;
+  onUpdateFolderPrivacy?: (folderId: string, isPublic: boolean) => Promise<void> | void;
 };
 
 const DEFAULT_AVATAR = publicAsset("/avatar-default.svg");
@@ -75,11 +98,26 @@ export default function ProfileCard({
   onAvatarImageChange,
   onBannerImageChange,
   onBioSave,
+  rootFolderId,
+  collectionFolders = [],
+  collectionsLoading = false,
+  collectionsError = "",
+  onLoadFolderContents,
+  onCreateFolder,
+  onRenameFolder,
+  onDeleteFolder,
+  onUpdateFolderPrivacy,
 }: ProfileCardProps) {
   const [avatarSrc, setAvatarSrc] = useState(
     normalizeOptionalImageSrc(avatarSrcProp) ?? DEFAULT_AVATAR,
   );
-  const [openFolder, setOpenFolder] = useState<string | null>(null);
+  const [openFolder, setOpenFolder] = useState<{
+    id: string;
+    label: string;
+    isPublic: boolean;
+    subfolders: Array<{ id: string; label: string; isPublic: boolean }>;
+    artworks: ProfilePostItem[];
+  } | null>(null);
   const [bannerSrc, setBannerSrc] = useState<string | null>(
     normalizeOptionalImageSrc(bannerSrcProp),
   );
@@ -92,6 +130,14 @@ export default function ProfileCard({
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderVisibility, setNewFolderVisibility] = useState<"public" | "private">("public");
   const [folderError, setFolderError] = useState("");
+  const [folderBusy, setFolderBusy] = useState(false);
+  const [deleteConfirmationDialog, setDeleteConfirmationDialog] = useState<{
+    folderId: string;
+    folderName: string;
+    hasContent: boolean;
+    subfolderCount: number;
+    artworkCount: number;
+  } | null>(null);
 
   const [bioDraft, setBioDraft] = useState(bio);
   const [editingBio, setEditingBio] = useState(false);
@@ -166,6 +212,37 @@ export default function ProfileCard({
       setBioSaving(false);
     }
   };
+
+  const openFolderById = useCallback(
+    async (folderId: string, fallbackLabel?: string) => {
+      if (!onLoadFolderContents) {
+        setOpenFolder({
+          id: folderId,
+          label: fallbackLabel || "Folder",
+          isPublic: true,
+          subfolders: [],
+          artworks: [],
+        });
+        return;
+      }
+
+      setFolderError("");
+      setFolderBusy(true);
+      try {
+        const data = await onLoadFolderContents(folderId);
+        setOpenFolder(data);
+      } catch (error: unknown) {
+        setFolderError(
+          error instanceof Error
+            ? error.message
+            : "Could not load folder contents",
+        );
+      } finally {
+        setFolderBusy(false);
+      }
+    },
+    [onLoadFolderContents],
+  );
 
   return (
     <article className="entire_container">
@@ -312,7 +389,7 @@ export default function ProfileCard({
           >
             Collections
           </button>
-          {activeTab === "collections" && !openFolder && (
+          {isEditable && activeTab === "collections" && (
             <button
               className="add_folder_btn"
               type="button"
@@ -332,19 +409,177 @@ export default function ProfileCard({
             <div className="folder_contents">
               <button
                 className="folder_back_btn"
-                onClick={() => setOpenFolder(null)}
+                onClick={() => {
+                  setOpenFolder(null);
+                  setFolderError("");
+                }}
                 type="button"
               >
                 ← Back to Collections
               </button>
-              <h3 className="folder_contents_title">{openFolder}</h3>
-              <p className="folder_contents_empty">This folder is empty.</p>
+
+              <h3 className="folder_contents_title">{openFolder.label}</h3>
+              <p className="profile_user_bio muted">
+                Visibility: {openFolder.isPublic ? "Public" : "Private"}
+              </p>
+
+              {isEditable && onRenameFolder ? (
+                <button
+                  className="profile_bio_edit_btn"
+                  type="button"
+                  onClick={async () => {
+                    const nextName = window.prompt(
+                      "Rename folder",
+                      openFolder.label,
+                    );
+                    const sanitized = sanitizeSingleLineText(
+                      nextName ?? "",
+                      100,
+                    ).trim();
+                    if (!sanitized) return;
+                    setFolderBusy(true);
+                    try {
+                      await Promise.resolve(onRenameFolder(openFolder.id, sanitized));
+                      await openFolderById(openFolder.id, sanitized);
+                    } catch (error: unknown) {
+                      setFolderError(
+                        error instanceof Error
+                          ? error.message
+                          : "Could not rename folder",
+                      );
+                    } finally {
+                      setFolderBusy(false);
+                    }
+                  }}
+                  disabled={folderBusy}
+                >
+                  Rename folder
+                </button>
+              ) : null}
+
+              {isEditable && onUpdateFolderPrivacy ? (
+                <button
+                  className="profile_bio_edit_btn"
+                  type="button"
+                  onClick={async () => {
+                    setFolderBusy(true);
+                    try {
+                      await Promise.resolve(
+                        onUpdateFolderPrivacy(openFolder.id, !openFolder.isPublic),
+                      );
+                      await openFolderById(openFolder.id, openFolder.label);
+                    } catch (error: unknown) {
+                      setFolderError(
+                        error instanceof Error
+                          ? error.message
+                          : "Could not update folder privacy",
+                      );
+                    } finally {
+                      setFolderBusy(false);
+                    }
+                  }}
+                  disabled={folderBusy}
+                >
+                  Make {openFolder.isPublic ? "Private" : "Public"}
+                </button>
+              ) : null}
+
+              {isEditable && onDeleteFolder ? (
+                <button
+                  className="profile_bio_cancel_btn"
+                  type="button"
+                  onClick={async () => {
+                    setFolderError("");
+                    setFolderBusy(true);
+                    try {
+                      // Try to delete with no content handling specified
+                      // If folder has content, it will return a 409 error
+                      await Promise.resolve(
+                        onDeleteFolder(openFolder.id, undefined)
+                      );
+                      setOpenFolder(null);
+                    } catch (error: unknown) {
+                      // Check if this is a "folder has content" error
+                      interface FolderDeleteError extends Error {
+                        requiresChoice?: boolean;
+                        hasContent?: boolean;
+                        subfolderCount?: number;
+                        artworkCount?: number;
+                      }
+                      const typedError = error as FolderDeleteError;
+                      const isContentError =
+                        error instanceof Error &&
+                        typedError.requiresChoice === true;
+
+                      if (isContentError) {
+                        // Show the confirmation dialog
+                        setDeleteConfirmationDialog({
+                          folderId: openFolder.id,
+                          folderName: openFolder.label,
+                          hasContent: typedError.hasContent || false,
+                          subfolderCount: typedError.subfolderCount || 0,
+                          artworkCount: typedError.artworkCount || 0,
+                        });
+                      } else {
+                        setFolderError(
+                          error instanceof Error
+                            ? error.message
+                            : "Could not delete folder",
+                        );
+                      }
+                    } finally {
+                      setFolderBusy(false);
+                    }
+                  }}
+                  disabled={folderBusy}
+                >
+                  Delete folder
+                </button>
+              ) : null}
+
+              {folderError ? <p className="modal_error">{folderError}</p> : null}
+
+              {openFolder.subfolders.length > 0 ? (
+                <div className="folder_row">
+                  {openFolder.subfolders.map((folder) => (
+                    <Folder
+                      key={folder.id}
+                      label={folder.label}
+                      onClick={() => {
+                        void openFolderById(folder.id, folder.label);
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {openFolder.artworks.length > 0 ? (
+                <ProfilePostsGrid posts={openFolder.artworks} username={username} />
+              ) : (
+                <p className="folder_contents_empty">This folder is empty.</p>
+              )}
             </div>
           ) : (
-            <div className="folder_row">
-              <Folder label="Portfolio" onClick={() => setOpenFolder("Portfolio")} />
-              <Folder label="Archive" onClick={() => setOpenFolder("Archive")} />
-            </div>
+            <>
+              {collectionsError ? <p className="modal_error">{collectionsError}</p> : null}
+              {collectionsLoading ? (
+                <p className="folder_contents_empty">Loading folders…</p>
+              ) : collectionFolders.length > 0 ? (
+                <div className="folder_row">
+                  {collectionFolders.map((folder) => (
+                    <Folder
+                      key={folder.id}
+                      label={folder.label}
+                      onClick={() => {
+                        void openFolderById(folder.id, folder.label);
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="folder_contents_empty">No folders yet.</p>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -427,17 +662,143 @@ export default function ProfileCard({
                 className="modal_add_btn"
                 type="button"
                 disabled={!newFolderName.trim()}
-                onClick={() => {
-                  // TODO: wire up to backend
-                  setShowAddFolder(false);
-                  setNewFolderName("");
-                  setNewFolderVisibility("public");
+                onClick={async () => {
+                  const trimmed = newFolderName.trim();
+                  if (!trimmed) {
+                    setFolderError("Folder name is required");
+                    return;
+                  }
+
+                  if (!onCreateFolder) {
+                    setShowAddFolder(false);
+                    setNewFolderName("");
+                    setNewFolderVisibility("public");
+                    setFolderError("");
+                    return;
+                  }
+
+                  setFolderBusy(true);
                   setFolderError("");
+                  try {
+                    await Promise.resolve(
+                      onCreateFolder(
+                        trimmed,
+                        newFolderVisibility === "public",
+                        openFolder?.id || rootFolderId,
+                      ),
+                    );
+                    if (openFolder) {
+                      await openFolderById(openFolder.id, openFolder.label);
+                    }
+                    setShowAddFolder(false);
+                    setNewFolderName("");
+                    setNewFolderVisibility("public");
+                  } catch (error: unknown) {
+                    setFolderError(
+                      error instanceof Error
+                        ? error.message
+                        : "Could not create folder",
+                    );
+                  } finally {
+                    setFolderBusy(false);
+                  }
                 }}
               >
-                Add
+                {folderBusy ? "Adding…" : "Add"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {deleteConfirmationDialog && (
+        <div className="modal_overlay" onClick={() => setDeleteConfirmationDialog(null)}>
+          <div className="modal_box" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal_title">Delete Folder</h3>
+            <p style={{ marginBottom: "16px" }}>
+              The folder &ldquo;{deleteConfirmationDialog.folderName}&rdquo; contains {deleteConfirmationDialog.artworkCount} artwork
+              {deleteConfirmationDialog.artworkCount !== 1 ? "s" : ""} 
+              {deleteConfirmationDialog.subfolderCount > 0 && deleteConfirmationDialog.artworkCount > 0 ? " and " : ""}
+              {deleteConfirmationDialog.subfolderCount > 0 && (
+                <>
+                  {deleteConfirmationDialog.subfolderCount} subfolder
+                  {deleteConfirmationDialog.subfolderCount !== 1 ? "s" : ""}
+                </>
+              )}.
+            </p>
+            <p style={{ marginBottom: "16px", fontSize: "14px", color: "#666" }}>
+              What would you like to do?
+            </p>
+            <div className="modal_actions" style={{ flexDirection: "column", gap: "8px" }}>
+              <button
+                className="modal_add_btn"
+                type="button"
+                disabled={folderBusy || !onDeleteFolder}
+                onClick={async () => {
+                  if (!onDeleteFolder) return;
+                  setFolderError("");
+                  setFolderBusy(true);
+                  try {
+                    await Promise.resolve(
+                      onDeleteFolder(deleteConfirmationDialog.folderId, true)
+                    );
+                    setOpenFolder(null);
+                    setDeleteConfirmationDialog(null);
+                  } catch (error: unknown) {
+                    setFolderError(
+                      error instanceof Error
+                        ? error.message
+                        : "Could not delete folder",
+                    );
+                  } finally {
+                    setFolderBusy(false);
+                  }
+                }}
+              >
+                {folderBusy ? "Deleting…" : "Delete Folder & All Contents"}
+              </button>
+              <button
+                className="modal_cancel_btn"
+                type="button"
+                disabled={folderBusy || !onDeleteFolder}
+                onClick={async () => {
+                  if (!onDeleteFolder) return;
+                  setFolderError("");
+                  setFolderBusy(true);
+                  try {
+                    await Promise.resolve(
+                      onDeleteFolder(deleteConfirmationDialog.folderId, false, true)
+                    );
+                    setOpenFolder(null);
+                    setDeleteConfirmationDialog(null);
+                  } catch (error: unknown) {
+                    setFolderError(
+                      error instanceof Error
+                        ? error.message
+                        : "Could not delete folder",
+                    );
+                  } finally {
+                    setFolderBusy(false);
+                  }
+                }}
+                style={{ backgroundColor: "#f0f0f0", color: "#333" }}
+              >
+                {folderBusy ? "Moving…" : "Move Contents Up & Delete Folder"}
+              </button>
+              <button
+                className="modal_cancel_btn"
+                type="button"
+                disabled={folderBusy}
+                onClick={() => setDeleteConfirmationDialog(null)}
+                style={{ backgroundColor: "#f5f5f5", color: "#666" }}
+              >
+                Cancel
+              </button>
+            </div>
+            {folderError ? (
+              <p className="modal_error" role="alert" style={{ marginTop: "16px" }}>
+                {folderError}
+              </p>
+            ) : null}
           </div>
         </div>
       )}

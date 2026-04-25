@@ -19,6 +19,7 @@ export type ApiArtworkCommon = {
   thumbnailPath?: string;
   imageUrl?: string;
   isPublic?: boolean;
+  folderId?: string;
   userId?: string | ArtworkUserSummary;
   user?: ArtworkUserSummary;
   userDetails?: ArtworkUserSummary;
@@ -169,12 +170,16 @@ export function mapArtworkToProfileItem(
   };
 }
 
-export async function fetchArtworks(options: { auth?: boolean; userId?: string } = {}): Promise<ApiArtworkCommon[]> {
+export async function fetchArtworks(options: { auth?: boolean; userId?: string; includePrivate?: boolean } = {}): Promise<ApiArtworkCommon[]> {
   try {
     const userId = stringOrEmpty(options.userId);
-    const path = userId
-      ? `/api/artworks?userId=${encodeURIComponent(userId)}`
-      : "/api/artworks";
+    const includePrivate = Boolean(options.includePrivate);
+
+    const query = new URLSearchParams();
+    if (userId) query.set("userId", userId);
+    if (includePrivate) query.set("includePrivate", "true");
+    const suffix = query.toString();
+    const path = suffix ? `/api/artworks?${suffix}` : "/api/artworks";
 
     const res = await apiFetch(path, {
       auth: options.auth ?? false,
@@ -197,7 +202,7 @@ export async function fetchArtworkForPost(
 
   try {
     const res = await apiFetch(`/api/artworks/${encodeURIComponent(id)}`, {
-      auth: false,
+      auth: true,
     });
     if (!res.ok) return null;
 
@@ -208,4 +213,71 @@ export async function fetchArtworkForPost(
   } catch {
     return null;
   }
+}
+
+export async function bookmarkArtwork(artworkId: string): Promise<void> {
+  const id = stringOrEmpty(artworkId);
+  if (!id) {
+    throw new Error("Artwork id is required");
+  }
+
+  const res = await apiFetch(`/api/artworks/${encodeURIComponent(id)}/bookmark`, {
+    method: "POST",
+    auth: true,
+  });
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as {
+      message?: string;
+    };
+    throw new Error(data.message || "Could not save to bookmarks");
+  }
+}
+
+export async function unbookmarkArtwork(artworkId: string): Promise<void> {
+  const id = stringOrEmpty(artworkId);
+  if (!id) {
+    throw new Error("Artwork id is required");
+  }
+
+  const res = await apiFetch(`/api/artworks/${encodeURIComponent(id)}/unbookmark`, {
+    method: "POST",
+    auth: true,
+  });
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as {
+      message?: string;
+    };
+    throw new Error(data.message || "Could not remove from bookmarks");
+  }
+}
+
+export async function updateArtwork(
+  artworkId: string,
+  payload: {
+    title?: string;
+    description?: string;
+    folderId?: string;
+  },
+): Promise<ApiArtworkDetail> {
+  const id = stringOrEmpty(artworkId);
+  if (!id) {
+    throw new Error("Artwork id is required");
+  }
+
+  const res = await apiFetch(`/api/artworks/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+
+  const data = (await res.json().catch(() => ({}))) as ApiArtworkDetail & {
+    message?: string;
+  };
+  if (!res.ok) {
+    throw new Error(data.message || "Could not update artwork");
+  }
+
+  return data;
 }

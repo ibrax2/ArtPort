@@ -11,6 +11,7 @@ import type { ApiFeedbackResponseQuestion } from "@/lib/feedbackApi";
 import type { FeedbackFormConfig } from "@/types/feedback";
 
 interface ArtworkPostProps {
+  artworkId?: string;
   imageUrl: string;
   title: string;
   description: string;
@@ -31,9 +32,17 @@ interface ArtworkPostProps {
     form: { questions: ApiFeedbackResponseQuestion[] };
   }[];
   otherPosts?: { id: string; imageSrc: string; title: string }[];
+  onSaveToBookmarks?: () => Promise<void> | void;
+  isBookmarked?: boolean;
+  onRemoveFromBookmarks?: () => Promise<void> | void;
+  folderOptions?: Array<{ id: string; label: string }>;
+  selectedFolderId?: string;
+  currentFolderName?: string;
+  onMoveToFolder?: (folderId: string) => Promise<void> | void;
 }
 
 export default function ArtworkPost({
+  artworkId,
   imageUrl,
   title,
   description,
@@ -48,6 +57,13 @@ export default function ArtworkPost({
   showDeletePost = false,
   receivedResponses = [],
   otherPosts = [],
+  onSaveToBookmarks,
+  isBookmarked = false,
+  onRemoveFromBookmarks,
+  folderOptions = [],
+  selectedFolderId = "",
+  currentFolderName = "",
+  onMoveToFolder,
 }: ArtworkPostProps) {
   const pathname = usePathname();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -65,6 +81,14 @@ export default function ArtworkPost({
     ? "Feedback summary"
     : "Leave Feedback";
   const buttonCloseLabel = isOwnerArtwork ? "Close summary" : "Close Feedback";
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const [bookmarkMessage, setBookmarkMessage] = useState("");
+  const [folderIdDraft, setFolderIdDraft] = useState(selectedFolderId);
+  const [moveBusy, setMoveBusy] = useState(false);
+
+  React.useEffect(() => {
+    setFolderIdDraft(selectedFolderId);
+  }, [selectedFolderId]);
 
   const feedbackButton = canInteract ? (
     <button
@@ -122,6 +146,106 @@ export default function ArtworkPost({
                     >
                       Remove from my gallery
                     </button>
+                  ) : null}
+                  {!isOwnerArtwork && canInteract && (onSaveToBookmarks || onRemoveFromBookmarks) ? (
+                    <>
+                      {!isBookmarked && onSaveToBookmarks ? (
+                        <button
+                          type="button"
+                          className={styles.feedbackButton}
+                          disabled={bookmarkBusy}
+                          onClick={async () => {
+                            setBookmarkMessage("");
+                            setBookmarkBusy(true);
+                            try {
+                              await Promise.resolve(onSaveToBookmarks());
+                              setBookmarkMessage("Saved to your Bookmarks folder");
+                            } catch (error: unknown) {
+                              setBookmarkMessage(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Could not save to bookmarks",
+                              );
+                            } finally {
+                              setBookmarkBusy(false);
+                            }
+                          }}
+                        >
+                          {bookmarkBusy ? "Saving..." : "Save to Bookmarks"}
+                        </button>
+                      ) : null}
+                      {isBookmarked && onRemoveFromBookmarks ? (
+                        <button
+                          type="button"
+                          className={styles.feedbackButton}
+                          disabled={bookmarkBusy}
+                          onClick={async () => {
+                            setBookmarkMessage("");
+                            setBookmarkBusy(true);
+                            try {
+                              await Promise.resolve(onRemoveFromBookmarks());
+                              setBookmarkMessage("Removed from Bookmarks");
+                            } catch (error: unknown) {
+                              setBookmarkMessage(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Could not remove from bookmarks",
+                              );
+                            } finally {
+                              setBookmarkBusy(false);
+                            }
+                          }}
+                        >
+                          {bookmarkBusy ? "Removing..." : "Remove from Bookmarks"}
+                        </button>
+                      ) : null}
+                    </>
+                  ) : null}
+                  {bookmarkMessage ? (
+                    <p className={styles.feedbackNoFormHint}>{bookmarkMessage}</p>
+                  ) : null}
+                  {isOwnerArtwork && canInteract && onMoveToFolder ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span style={{ fontSize: 12, color: "#666" }}>Current Folder:</span>
+                        <span style={{ fontSize: 12, fontWeight: 500 }}>
+                          {currentFolderName || folderOptions.find((opt) => opt.id === selectedFolderId)?.label || "No folder"}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <label htmlFor={`folder-move-${artworkId || "artwork"}`} style={{ fontSize: 12 }}>
+                          Move to:
+                        </label>
+                        <select
+                          id={`folder-move-${artworkId || "artwork"}`}
+                          value={folderIdDraft}
+                          onChange={(e) => setFolderIdDraft(e.target.value)}
+                          style={{ padding: "6px 8px", borderRadius: 6 }}
+                        >
+                          <option value="">No folder</option>
+                          {folderOptions.map((opt) => (
+                            <option key={opt.id} value={opt.id}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className={styles.feedbackButton}
+                          disabled={moveBusy || folderIdDraft === selectedFolderId}
+                          onClick={async () => {
+                            setMoveBusy(true);
+                            try {
+                              await Promise.resolve(onMoveToFolder(folderIdDraft));
+                            } finally {
+                              setMoveBusy(false);
+                            }
+                          }}
+                        >
+                          {moveBusy ? "Updating..." : "Move Post"}
+                        </button>
+                      </div>
+                    </div>
                   ) : null}
                 </div>
               ) : null}

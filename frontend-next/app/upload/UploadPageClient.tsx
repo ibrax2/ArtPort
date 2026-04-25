@@ -7,17 +7,83 @@ import UploadCard from "@/components/uploadcard";
 import { apiFetch } from "@/lib/apiClient";
 import { fetchCurrentUser } from "@/lib/currentUserApi";
 import { getApiErrorMessage } from "@/lib/apiErrorMessage";
+import { fetchUserFolderTree } from "@/lib/folderApi";
+
+type UploadFolderOption = {
+  id: string;
+  label: string;
+  isPublic: boolean;
+};
+
+const normalizeFolderName = (value: string) => value.trim().toLowerCase();
+
+function flattenFolderOptions(
+  node: {
+    _id: string;
+    folderName: string;
+    isPublic: boolean;
+    subfolders: Array<{
+      _id: string;
+      folderName: string;
+      isPublic: boolean;
+      subfolders: unknown[];
+    }>;
+  },
+  depth = 0,
+): UploadFolderOption[] {
+  const next: UploadFolderOption[] = [];
+  for (const child of node.subfolders || []) {
+    if (normalizeFolderName(child.folderName) !== "bookmarks") {
+      next.push({
+        id: String(child._id),
+        label: `${"  ".repeat(depth)}${child.folderName}`,
+        isPublic: Boolean(child.isPublic),
+      });
+    }
+
+    next.push(
+      ...flattenFolderOptions(
+        {
+          _id: String(child._id),
+          folderName: child.folderName,
+          isPublic: Boolean(child.isPublic),
+          subfolders: Array.isArray(child.subfolders)
+            ? (child.subfolders as Array<{
+                _id: string;
+                folderName: string;
+                isPublic: boolean;
+                subfolders: unknown[];
+              }>)
+            : [],
+        },
+        depth + 1,
+      ),
+    );
+  }
+  return next;
+}
 
 export default function UploadPageClient() {
   const router = useRouter();
   const [userId, setUserId] = useState<string | undefined>(undefined);
+  const [folderOptions, setFolderOptions] = useState<UploadFolderOption[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
     fetchCurrentUser().then((user) => {
       if (cancelled || !user?._id) return;
-      setUserId(String(user._id));
+      const id = String(user._id);
+      setUserId(id);
+
+      fetchUserFolderTree(id)
+        .then((tree) => {
+          if (cancelled || !tree) return;
+          setFolderOptions(flattenFolderOptions(tree));
+        })
+        .catch(() => {
+          if (!cancelled) setFolderOptions([]);
+        });
     });
 
     return () => {
@@ -49,7 +115,7 @@ export default function UploadPageClient() {
   return (
     <main className="upload-route">
       <h1> Upload page </h1>
-      <UploadCard onUpload={onUpload} userId={userId} />
+      <UploadCard onUpload={onUpload} userId={userId} folderOptions={folderOptions} />
     </main>
   );
 }

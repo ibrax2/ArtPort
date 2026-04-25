@@ -46,7 +46,8 @@ const parseBoolean = (value) => {
 const isAllowedPasswordCharacters = (password) =>
   PASSWORD_ALLOWED_PATTERN.test(password);
 
-const isStrongPassword = (password) => PASSWORD_STRONG_PATTERN.test(password);
+const isStrongPassword = (password) =>
+  PASSWORD_STRONG_PATTERN.test(password);
 
 // @desc    Get all users
 // @route   GET /api/users
@@ -188,6 +189,14 @@ export const registerUser = async (req, res) => {
       await Folder.create({
         userId: user._id,
         folderName: "Bookmarks",
+        parentFolderId: rootFolder._id,
+        isPublic: false,
+      });
+
+      // Create "Archive" folder
+      await Folder.create({
+        userId: user._id,
+        folderName: "Archive",
         parentFolderId: rootFolder._id,
         isPublic: false,
       });

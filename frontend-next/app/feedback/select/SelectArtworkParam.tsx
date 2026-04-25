@@ -30,23 +30,31 @@ export default function SelectArtworkParam() {
         <p className={styles.templateIntro}>
           Select a predesigned feedback form or create a custom feedback form.
         </p>
-        <div className={styles.templateGrid}>
+        <fieldset className={styles.templateGrid} aria-label="Choose feedback template">
           {FEEDBACK_FORM_TEMPLATES.map((t) => (
-            <button
+            <label
               key={t.id}
-              type="button"
               className={
                 templateId === t.id
                   ? `${styles.templateCard} ${styles.templateCardActive}`
                   : styles.templateCard
               }
-              onClick={() => setTemplateId(t.id)}
+              htmlFor={`template-${t.id}`}
             >
+              <input
+                id={`template-${t.id}`}
+                className={styles.templateRadio}
+                type="radio"
+                name="feedback-template"
+                value={t.id}
+                checked={templateId === t.id}
+                onChange={() => setTemplateId(t.id)}
+              />
               <span className={styles.templateName}>{t.name}</span>
               <span className={styles.templateBlurb}>{t.blurb}</span>
-            </button>
+            </label>
           ))}
-        </div>
+        </fieldset>
       </section>
 
       <FeedbackQuestionSelect

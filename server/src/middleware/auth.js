@@ -26,18 +26,20 @@ const getTokenFromCookies = (req) => {
   return null;
 };
 
-// Protect routes - verify JWT token
-export const protect = async (req, res, next) => {
-  let token;
-
+const getTokenFromRequest = (req) => {
   if (
     req.headers.authorization &&
     req.headers.authorization.startsWith("Bearer")
   ) {
-    token = req.headers.authorization.split(" ")[1];
-  } else {
-    token = getTokenFromCookies(req);
+    return req.headers.authorization.split(" ")[1];
   }
+
+  return getTokenFromCookies(req);
+};
+
+// Protect routes - verify JWT token
+export const protect = async (req, res, next) => {
+  const token = getTokenFromRequest(req);
 
   if (!token) {
     return res.status(401).json({ message: "Not authorized, no token" });
@@ -59,4 +61,23 @@ export const protect = async (req, res, next) => {
     console.error(error);
     return res.status(401).json({ message: "Not authorized, token failed" });
   }
+};
+
+// Optionally attach req.user when a valid token is present, but never reject missing/invalid tokens.
+export const optionalProtect = async (req, _res, next) => {
+  const token = getTokenFromRequest(req);
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id).select("-passwordHash");
+  } catch {
+    req.user = null;
+  }
+
+  return next();
 };

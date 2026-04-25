@@ -16,6 +16,10 @@ const CODE_TO_MESSAGE: Record<string, string> = {
     "Description contains inappropriate language. Please rephrase it.",
   FOLDER_NAME_PROFANITY:
     "Folder name contains inappropriate language. Please rephrase it.",
+  FOLDER_NAME_REQUIRED:
+    "Folder name is required.",
+  FOLDER_NAME_TOO_LONG:
+    "Folder name must be less than 100 characters.",
   FEEDBACK_QUESTION_PROFANITY:
     "A feedback question contains inappropriate language. Please rephrase it.",
   FEEDBACK_DETAIL_PROFANITY:

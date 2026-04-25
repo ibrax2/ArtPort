@@ -3,6 +3,11 @@ import Artwork from "../models/Artwork.js";
 import User from "../models/User.js";
 import { validationError } from "../utils/apiErrors.js";
 import { profanity } from "../utils/profanity.js";
+import { withMediaDeliveryUrls } from "../utils/mediaDelivery.js";
+
+const RESERVED_FOLDER_NAMES = new Set(["bookmarks", "archive", "portfolio"]);
+const normalizeFolderName = (value) =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
 
 // @desc    Create a new folder
 // @route   POST /api/folders
@@ -38,6 +43,12 @@ export const createFolder = async (req, res) => {
         "FOLDER_NAME_TOO_LONG",
         "Folder name must be less than 100 characters",
       );
+    }
+
+    if (RESERVED_FOLDER_NAMES.has(normalizeFolderName(truncatedFolderName))) {
+      return res.status(400).json({
+        message: "Folder name is reserved",
+      });
     }
 
     // If parentFolderId is provided, verify it belongs to the user
@@ -128,13 +139,17 @@ export const getFolderContents = async (req, res) => {
       "_id title description filePath thumbnailPath uploadDate isPublic",
     );
 
+    const deliveredArtworks = artworks.map((artwork) =>
+      withMediaDeliveryUrls(artwork),
+    );
+
     res.json({
       folder,
       subfolders,
-      artworks,
+      artworks: deliveredArtworks,
       summary: {
         subfoldersCount: subfolders.length,
-        artworksCount: artworks.length,
+        artworksCount: deliveredArtworks.length,
       },
     });
   } catch (error) {
@@ -166,6 +181,35 @@ export const getUserFolderTree = async (req, res) => {
     if (!user.rootFolderId) {
       return res.status(404).json({
         message: "Root folder not found. Please contact support.",
+      });
+    }
+
+    const rootChildren = await Folder.find({
+      userId: req.params.id,
+      parentFolderId: user.rootFolderId,
+    })
+      .select("folderName")
+      .lean();
+
+    const childNames = new Set(
+      rootChildren.map((folder) => normalizeFolderName(folder.folderName)),
+    );
+
+    if (!childNames.has("bookmarks")) {
+      await Folder.create({
+        userId: req.params.id,
+        folderName: "Bookmarks",
+        parentFolderId: user.rootFolderId,
+        isPublic: false,
+      });
+    }
+
+    if (!childNames.has("archive")) {
+      await Folder.create({
+        userId: req.params.id,
+        folderName: "Archive",
+        parentFolderId: user.rootFolderId,
+        isPublic: false,
       });
     }
 
@@ -251,6 +295,25 @@ export const renameFolder = async (req, res) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
+    const folder = await Folder.findById(req.params.id);
+
+    if (!folder) {
+      return res.status(404).json({ message: "Folder not found" });
+    }
+
+    if (String(folder.userId) !== String(req.user._id)) {
+      return res.status(403).json({
+        message: "You do not have permission to update this folder",
+      });
+    }
+
+    // Prevent renaming system folders
+    if (RESERVED_FOLDER_NAMES.has(normalizeFolderName(folder.folderName))) {
+      return res.status(400).json({
+        message: "You cannot rename this system folder",
+      });
+    }
+
     const { folderName } = req.body;
 
     const truncatedFolderName = folderName.trim();
@@ -277,22 +340,6 @@ export const renameFolder = async (req, res) => {
       );
     }
 
-    const folder = await Folder.findById(req.params.id);
-
-    if (!folder) {
-      return res.status(404).json({ message: "Folder not found" });
-    }
-
-    if (String(folder.userId) !== String(req.user._id)) {
-      return res.status(403).json({
-        message: "You do not have permission to update this folder",
-      });
-    }
-
-    // Prevent renaming root folder structure (optional check)
-    // You might want to allow/disallow renaming "Portfolio" and "Archive"
-    // For now, we'll allow renaming everything
-
     folder.folderName = truncatedFolderName;
     const updatedFolder = await folder.save();
 
@@ -311,7 +358,7 @@ export const deleteFolder = async (req, res) => {
       return res.status(401).json({ message: "Not authorized" });
     }
 
-    const { deleteContents } = req.body; // If false, move contents to parent
+    const { deleteContents, moveContentsUp } = req.body;
 
     const folder = await Folder.findById(req.params.id);
 
@@ -325,6 +372,13 @@ export const deleteFolder = async (req, res) => {
       });
     }
 
+    // Prevent deleting system folders
+    if (RESERVED_FOLDER_NAMES.has(normalizeFolderName(folder.folderName))) {
+      return res.status(400).json({
+        message: "You cannot delete this system folder",
+      });
+    }
+
     // Check if folder has a parent (can't delete root folder through this endpoint)
     if (!folder.parentFolderId) {
       return res.status(400).json({
@@ -332,14 +386,24 @@ export const deleteFolder = async (req, res) => {
       });
     }
 
-    // Check for subfolders
+    // Check for subfolders and artworks
     const subfolderCount = await Folder.countDocuments({
       parentFolderId: req.params.id,
     });
 
-    const artworkCount = await Artwork.countDocuments({
-      folderId: req.params.id,
-    });
+    const artworkCount = folder.artworkIds ? folder.artworkIds.length : 0;
+    const hasContent = subfolderCount > 0 || artworkCount > 0;
+
+    // If folder has content and user hasn't specified what to do, return error with info
+    if (hasContent && !deleteContents && !moveContentsUp) {
+      return res.status(409).json({
+        message: "Folder contains content. Specify how to handle it.",
+        hasContent: true,
+        subfolderCount,
+        artworkCount,
+        requiresChoice: true,
+      });
+    }
 
     if (deleteContents) {
       // Recursively delete all subfolders and their contents
@@ -365,7 +429,7 @@ export const deleteFolder = async (req, res) => {
         deletedFolders: subfolderCount + 1,
         deletedArtworks: artworkCount,
       });
-    } else {
+    } else if (moveContentsUp) {
       // Move subfolders to parent folder
       if (subfolderCount > 0) {
         await Folder.updateMany(
@@ -390,6 +454,13 @@ export const deleteFolder = async (req, res) => {
         message: "Folder deleted. Contents moved to parent folder.",
         movedFolders: subfolderCount,
         movedArtworks: artworkCount,
+      });
+    } else {
+      // No content, just delete
+      await Folder.findByIdAndDelete(req.params.id);
+
+      res.json({
+        message: "Folder deleted successfully",
       });
     }
   } catch (error) {

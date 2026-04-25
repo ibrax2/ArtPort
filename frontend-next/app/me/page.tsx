@@ -16,6 +16,37 @@ import { apiFetch } from "@/lib/apiClient";
 import { patchUserBio } from "@/lib/userBioApi";
 import { USER_STATE_EVENT } from "@/lib/userStateEvent";
 import { normalizeUserProfile } from "@/lib/userProfile";
+import {
+  createFolder as createFolderApi,
+  deleteFolder as deleteFolderApi,
+  fetchFolderContents,
+  fetchUserFolderTree,
+  renameFolder as renameFolderApi,
+  updateFolderPrivacy as updateFolderPrivacyApi,
+  type FolderSummaryItem,
+} from "@/lib/folderApi";
+
+type CollectionFolder = {
+  id: string;
+  label: string;
+  isPublic: boolean;
+};
+
+type OpenFolderState = {
+  id: string;
+  label: string;
+  isPublic: boolean;
+  subfolders: CollectionFolder[];
+  artworks: ProfilePostItem[];
+};
+
+function toCollectionFolder(folder: FolderSummaryItem): CollectionFolder {
+  return {
+    id: String(folder._id),
+    label: folder.folderName,
+    isPublic: Boolean(folder.isPublic),
+  };
+}
 
 function MePageContent() {
   const [username, setUsername] = useState("Artist");
@@ -26,6 +57,10 @@ function MePageContent() {
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | undefined>(undefined);
   const [bannerPictureUrl, setBannerPictureUrl] = useState<string | undefined>(undefined);
   const [userPosts, setUserPosts] = useState<ProfilePostItem[]>([]);
+  const [rootFolderId, setRootFolderId] = useState<string | undefined>(undefined);
+  const [collectionFolders, setCollectionFolders] = useState<CollectionFolder[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsError, setCollectionsError] = useState("");
 
   const uploadUserImage = useCallback(
     async (fieldName: "profilePicture" | "bannerPicture", blob: Blob) => {
@@ -102,6 +137,43 @@ function MePageContent() {
     };
   }, []);
 
+  const refreshFolderTree = useCallback(async () => {
+    if (!userId) {
+      setRootFolderId(undefined);
+      setCollectionFolders([]);
+      return;
+    }
+
+    setCollectionsLoading(true);
+    setCollectionsError("");
+    try {
+      const tree = await fetchUserFolderTree(userId);
+      if (!tree) {
+        setRootFolderId(undefined);
+        setCollectionFolders([]);
+        return;
+      }
+
+      setRootFolderId(String(tree._id));
+      setCollectionFolders(
+        Array.isArray(tree.subfolders)
+          ? tree.subfolders.map((folder) => ({
+              id: String(folder._id),
+              label: folder.folderName,
+              isPublic: Boolean(folder.isPublic),
+            }))
+          : [],
+      );
+    } catch (error) {
+      setCollectionsError(
+        error instanceof Error ? error.message : "Could not load folders",
+      );
+      setCollectionFolders([]);
+    } finally {
+      setCollectionsLoading(false);
+    }
+  }, [userId]);
+
   const loadUserPosts = useCallback(() => {
     if (!userId) return;
     fetchArtworks({ auth: true, userId }).then((data) => {
@@ -116,6 +188,10 @@ function MePageContent() {
   useEffect(() => {
     loadUserPosts();
   }, [loadUserPosts]);
+
+  useEffect(() => {
+    void refreshFolderTree();
+  }, [refreshFolderTree]);
 
   const visibleUserPosts = userId ? userPosts : [];
   const profileCardKey = [
@@ -138,6 +214,67 @@ function MePageContent() {
     [userId],
   );
 
+  const handleLoadFolderContents = useCallback(
+    async (folderId: string): Promise<OpenFolderState> => {
+      const data = await fetchFolderContents(folderId);
+      return {
+        id: String(data.folder._id),
+        label: data.folder.folderName,
+        isPublic: Boolean(data.folder.isPublic),
+        subfolders: Array.isArray(data.subfolders)
+          ? data.subfolders.map(toCollectionFolder)
+          : [],
+        artworks: Array.isArray(data.artworks)
+          ? data.artworks.map((artwork, index) =>
+              mapArtworkToProfileItem(artwork, index),
+            )
+          : [],
+      };
+    },
+    [],
+  );
+
+  const handleCreateFolder = useCallback(
+    async (folderName: string, isPublic: boolean, parentFolderId?: string) => {
+      const parentId = parentFolderId ?? rootFolderId;
+      if (!parentId) {
+        throw new Error("Root folder is not ready yet");
+      }
+
+      await createFolderApi({
+        folderName,
+        parentFolderId: parentId,
+        isPublic,
+      });
+      await refreshFolderTree();
+    },
+    [refreshFolderTree, rootFolderId],
+  );
+
+  const handleRenameFolder = useCallback(
+    async (folderId: string, folderName: string) => {
+      await renameFolderApi(folderId, folderName);
+      await refreshFolderTree();
+    },
+    [refreshFolderTree],
+  );
+
+  const handleDeleteFolder = useCallback(
+    async (folderId: string, deleteContents?: boolean, moveContentsUp?: boolean) => {
+      await deleteFolderApi(folderId, deleteContents, moveContentsUp);
+      await refreshFolderTree();
+    },
+    [refreshFolderTree],
+  );
+
+  const handleUpdateFolderPrivacy = useCallback(
+    async (folderId: string, isPublic: boolean) => {
+      await updateFolderPrivacyApi(folderId, isPublic);
+      await refreshFolderTree();
+    },
+    [refreshFolderTree],
+  );
+
   return (
     <main className="user-profile-main">
       <ProfileCard
@@ -155,6 +292,15 @@ function MePageContent() {
         onAvatarImageChange={handleAvatarImageChange}
         onBannerImageChange={handleBannerImageChange}
         onBioSave={handleBioSave}
+        collectionFolders={collectionFolders}
+        collectionsLoading={collectionsLoading}
+        collectionsError={collectionsError}
+        rootFolderId={rootFolderId}
+        onLoadFolderContents={handleLoadFolderContents}
+        onCreateFolder={handleCreateFolder}
+        onRenameFolder={handleRenameFolder}
+        onDeleteFolder={handleDeleteFolder}
+        onUpdateFolderPrivacy={handleUpdateFolderPrivacy}
       />
     </main>
   );

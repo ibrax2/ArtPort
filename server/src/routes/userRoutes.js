@@ -10,6 +10,7 @@ import {
   getUserByUsername,
   updateUser,
 } from "../controllers/userController.js";
+import { getUserFolderTree } from "../controllers/folderController.js";
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ router.post("/login", loginUser);
 router.get("/me", protect, getCurrentUser);
 
 router.get("/by-username/:username", getUserByUsername);
+router.get("/:id/folder-tree", protect, getUserFolderTree);
 
 router.patch(
   "/:id",
