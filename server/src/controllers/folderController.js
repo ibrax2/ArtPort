@@ -136,7 +136,7 @@ export const getFolderContents = async (req, res) => {
 
     // Get subfolders
     const subfolders = await Folder.find({
-      parentFolderId: req.params.id,
+      _id: { $in: folder.subfolderIds },
     }).select("_id folderName isPublic createdAt updatedAt");
 
     // Get artworks stored in this folder
@@ -191,12 +191,14 @@ export const getUserFolderTree = async (req, res) => {
       });
     }
 
-    const rootChildren = await Folder.find({
-      userId: req.params.id,
-      parentFolderId: user.rootFolderId,
-    })
-      .select("folderName")
+    const rootFolder = await Folder.findById(user.rootFolderId)
+      .select("subfolderIds")
       .lean();
+    const rootChildren = rootFolder?.subfolderIds?.length
+      ? await Folder.find({ _id: { $in: rootFolder.subfolderIds } })
+          .select("folderName")
+          .lean()
+      : [];
 
     const childNames = new Set(
       rootChildren.map((folder) => normalizeFolderName(folder.folderName)),
@@ -222,23 +224,13 @@ export const getUserFolderTree = async (req, res) => {
 
     const folders = await Folder.find({ userId: req.params.id })
       .select(
-        "_id folderName isPublic createdAt updatedAt parentFolderId artworkIds",
+        "_id folderName isPublic createdAt updatedAt subfolderIds artworkIds",
       )
       .lean();
 
     const foldersById = new Map(
       folders.map((folder) => [String(folder._id), folder]),
     );
-    const childrenByParentId = new Map();
-
-    for (const folder of folders) {
-      if (!folder.parentFolderId) continue;
-      const parentKey = String(folder.parentFolderId);
-      if (!childrenByParentId.has(parentKey)) {
-        childrenByParentId.set(parentKey, []);
-      }
-      childrenByParentId.get(parentKey).push(folder);
-    }
 
     const artworkIds = Array.from(
       new Set(
@@ -270,8 +262,8 @@ export const getUserFolderTree = async (req, res) => {
             .filter(Boolean)
         : [];
 
-      const subfolders = (childrenByParentId.get(String(folder._id)) || [])
-        .map((child) => buildFolderTree(child._id))
+      const subfolders = (folder.subfolderIds || [])
+        .map((id) => buildFolderTree(id))
         .filter((child) => child !== null);
 
       return {
