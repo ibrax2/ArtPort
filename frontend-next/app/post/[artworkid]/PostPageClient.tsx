@@ -23,6 +23,7 @@ import {
   mapApiFormToConfig,
   type ApiFeedbackResponse,
   type ApiFeedbackForm,
+  fetchUserFeedbackResponses,
 } from "@/lib/feedbackApi";
 import { getClientAuthToken } from "@/lib/authSession";
 import { fetchCurrentUser } from "@/lib/currentUserApi";
@@ -85,6 +86,7 @@ export default function PostPageClient({ segment }: Props) {
   const [feedbackFormId, setFeedbackFormId] = useState<string | null>(null);
   const [isOwnerArtwork, setIsOwnerArtwork] = useState(false);
   const [receivedResponses, setReceivedResponses] = useState<ApiFeedbackResponse[]>([]);
+  const [hasSubmittedFeedback, setHasSubmittedFeedback] = useState(false);
   const [otherPosts, setOtherPosts] = useState<{ id: string; imageSrc: string; title: string }[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     Boolean(getClientAuthToken())
@@ -255,6 +257,20 @@ export default function PostPageClient({ segment }: Props) {
                 setReceivedResponses([]);
               }
             }
+          } else if (!isOwner && token) {
+            try {
+              const userResponses = await fetchUserFeedbackResponses(
+                String(form._id),
+                token
+              );
+              if (!cancelled) {
+                setHasSubmittedFeedback(userResponses.length > 0);
+              }
+            } catch {
+              if (!cancelled) {
+                setHasSubmittedFeedback(false);
+              }
+            }
           }
         }
         setLoading(false);
@@ -315,6 +331,7 @@ export default function PostPageClient({ segment }: Props) {
       isOwnerArtwork={isOwnerArtwork}
       isAuthenticated={isAuthenticated}
       receivedResponses={receivedResponses}
+      hasSubmittedFeedback={hasSubmittedFeedback}
       otherPosts={otherPosts}
       artworkId={typeof artwork._id === "string" ? artwork._id : undefined}
       onSaveToBookmarks={
