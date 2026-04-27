@@ -185,7 +185,7 @@
 .captionFrame {
   width: 100%;
   margin-top: 24px;
-  padding: 32px 16px 24px;  /* was padding-bottom: 48px */
+  padding: 32px 16px 48px;  /* Increased bottom padding */
   background: #f3e1cf;
   border: 3px solid #c9b297;
   box-sizing: border-box;
@@ -247,7 +247,9 @@
 
 /* Feedback button */
 .feedbackButton {
-  width: 150px;
+  min-width: 160px;
+  width: auto;
+  padding: 0 16px;
   height: 36px;
   background: #f29f41;
   border: none;
@@ -274,7 +276,7 @@
 }
 
 .feedbackNoFormHint {
-  margin: 0;
+  margin: 12px 0 0; /* Added margin-top */
   flex: 1 1 100%;
   max-width: 420px;
   font-family: "Inter", sans-serif;
@@ -317,4 +319,27 @@
 .deletePostButton:focus-visible {
   outline: 2px solid #215a80;
   outline-offset: 2px;
+}
+
+/* Responsiveness */
+@media (max-width: 1200px) {
+  .mainFrame {
+    flex-direction: column;
+    align-items: center;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .leftColumn, 
+  .leftColumnNarrow, 
+  .sidebar, 
+  .feedbackPanel, 
+  .artistInfo {
+    width: 100% !important;
+    max-width: 800px;
+  }
+  
+  .sidebar {
+    margin-top: 24px;
+  }
 }

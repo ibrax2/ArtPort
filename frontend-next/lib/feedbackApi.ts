@@ -358,3 +358,26 @@ export async function fetchReceivedFeedbackResponses(
 
   return data as ApiFeedbackResponse[];
 }
+
+export async function fetchUserFeedbackResponses(
+  feedbackFormId: string,
+  token: string | null
+): Promise<ApiFeedbackResponse[]> {
+  if (!feedbackFormId) {
+    return [];
+  }
+
+  const res = await fetch(
+    apiUrl(
+      `/api/response?feedbackFormId=${encodeURIComponent(feedbackFormId)}`
+    ),
+    authFetchOptions(token)
+  );
+
+  const data = (await res.json().catch(() => null)) as unknown;
+  if (!res.ok || !Array.isArray(data)) {
+    return [];
+  }
+
+  return data as ApiFeedbackResponse[];
+}

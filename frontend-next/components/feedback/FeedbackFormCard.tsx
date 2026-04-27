@@ -33,6 +33,7 @@ function emptyAnswers(questions: FeedbackQuestion[]) {
 export type FeedbackFormCardProps = {
   config: FeedbackFormConfig;
   remoteFormId?: string;
+  onSuccess?: () => void;
 };
 
 type FormOnSubmit = NonNullable<ComponentProps<"form">["onSubmit"]>;
@@ -50,6 +51,7 @@ function isQuestionAnswered(
 export default function FeedbackFormCard({
   config,
   remoteFormId,
+  onSuccess,
 }: FeedbackFormCardProps) {
   const [answers, setAnswers] = useState(() =>
     emptyAnswers(config.questions)
@@ -129,6 +131,7 @@ export default function FeedbackFormCard({
         setSubmitError("");
         await submitFeedbackResponse(remoteFormId, answersPayload, token);
         setSubmitted(true);
+        onSuccess?.();
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Submit failed";
         setSubmitError(msg);
@@ -147,6 +150,7 @@ export default function FeedbackFormCard({
       /* ignore */
     }
     setSubmitted(true);
+    onSuccess?.();
   };
 
   return (

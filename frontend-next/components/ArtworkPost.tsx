@@ -39,6 +39,7 @@ interface ArtworkPostProps {
   selectedFolderId?: string;
   currentFolderName?: string;
   onMoveToFolder?: (folderId: string) => Promise<void> | void;
+  hasSubmittedFeedback?: boolean;
 }
 
 export default function ArtworkPost({
@@ -64,6 +65,7 @@ export default function ArtworkPost({
   selectedFolderId = "",
   currentFolderName = "",
   onMoveToFolder,
+  hasSubmittedFeedback = false,
 }: ArtworkPostProps) {
   const pathname = usePathname();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -73,14 +75,30 @@ export default function ArtworkPost({
     pathname && pathname.startsWith("/")
       ? `/login?next=${encodeURIComponent(pathname)}`
       : "/login";
+  
+  const [localSubmitted, setLocalSubmitted] = useState(hasSubmittedFeedback);
+  React.useEffect(() => {
+    setLocalSubmitted(hasSubmittedFeedback);
+  }, [hasSubmittedFeedback]);
+
   const noFormForVisitor = canInteract && !hasFeedbackForm && !isOwnerArtwork;
+  const cannotSubmitMore = !isOwnerArtwork && localSubmitted;
+  
   const feedbackDisabledTitle = noFormForVisitor
     ? "The artist has not set up a feedback form for this artwork yet."
+    : cannotSubmitMore
+    ? "You have already submitted feedback for this artwork."
     : undefined;
+    
   const buttonOpenLabel = isOwnerArtwork
     ? "Feedback summary"
+    : cannotSubmitMore
+    ? "Feedback Submitted"
     : "Leave Feedback";
+    
   const buttonCloseLabel = isOwnerArtwork ? "Close summary" : "Close Feedback";
+  const isButtonDisabled = noFormForVisitor || (cannotSubmitMore && !feedbackOpen);
+
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const [bookmarkMessage, setBookmarkMessage] = useState("");
   const [folderIdDraft, setFolderIdDraft] = useState(selectedFolderId);
@@ -95,7 +113,7 @@ export default function ArtworkPost({
       type="button"
       className={styles.feedbackButton}
       onClick={() => setFeedbackOpen(!feedbackOpen)}
-      disabled={noFormForVisitor}
+      disabled={isButtonDisabled}
       title={feedbackDisabledTitle}
     >
       {feedbackOpen ? buttonCloseLabel : buttonOpenLabel}
@@ -127,7 +145,7 @@ export default function ArtworkPost({
                     type="button"
                     className={styles.feedbackButton}
                     onClick={() => setFeedbackOpen(!feedbackOpen)}
-                    disabled={noFormForVisitor}
+                    disabled={isButtonDisabled}
                     title={feedbackDisabledTitle}
                   >
                     {feedbackOpen ? buttonCloseLabel : buttonOpenLabel}
@@ -352,6 +370,7 @@ export default function ArtworkPost({
               <FeedbackFormCard
                 config={feedbackConfig}
                 remoteFormId={feedbackFormId}
+                onSuccess={() => setLocalSubmitted(true)}
               />
             ) : (
               <div style={{ padding: "16px", textAlign: "center" }}>
