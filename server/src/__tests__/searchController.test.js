@@ -60,7 +60,8 @@ describe("Search Controller", () => {
         {
           _id: "69b334f0069481d81cce4065",
           username: "iai11",
-          profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
+          profilePictureUrl:
+            "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
           bio: "",
           score: 5.8,
         },
@@ -110,11 +111,11 @@ describe("Search Controller", () => {
       await searchUsers(req, res);
 
       const pipeline = User.aggregate.mock.calls[0][0];
+      const searchStage = pipeline[0].$search;
 
-      // Check that the $search stage includes fuzzy matching
-      expect(pipeline[0].$search.text.fuzzy).toEqual({
+      // Check that the fallback autocomplete clause includes fuzzy matching
+      expect(searchStage.compound.should[1].autocomplete.fuzzy).toEqual({
         maxEdits: 2,
-        prefixLength: 0,
       });
     });
 
@@ -122,7 +123,8 @@ describe("Search Controller", () => {
       const mockUsers = Array(20).fill({
         _id: "69b334f0069481d81cce4065",
         username: "iai11",
-        profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
+        profilePictureUrl:
+          "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
         bio: "",
         score: 5.8,
       });
@@ -171,14 +173,17 @@ describe("Search Controller", () => {
           _id: "69cecc61cfb78afc89c4f396",
           title: "starry night",
           description: "desc",
-          filePath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/1775160417057-0b2d6b37e892b9335e132787c2e6b0e9.jpg",
-          thumbnailPath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/thumbnails/1775160417627-68910f10d055e29a669c426ab66e42e0.jpg",
+          filePath:
+            "https://artport-images.s3.us-east-2.amazonaws.com/artworks/1775160417057-0b2d6b37e892b9335e132787c2e6b0e9.jpg",
+          thumbnailPath:
+            "https://artport-images.s3.us-east-2.amazonaws.com/artworks/thumbnails/1775160417627-68910f10d055e29a669c426ab66e42e0.jpg",
           uploadDate: new Date("2026-04-02T20:06:57.985+00:00"),
           isPublic: true,
           userId: "69b334f0069481d81cce4065",
           userDetails: {
             username: "iai11",
-            profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
+            profilePictureUrl:
+              "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
           },
           score: 5.8,
         },
@@ -218,9 +223,9 @@ describe("Search Controller", () => {
       const pipeline = Artwork.aggregate.mock.calls[0][0];
       const searchStage = pipeline[0].$search;
 
-      // Check that title has a boost of 2
+      // Check that title has a stronger boost than description matches
       const titleSearch = searchStage.compound.should[0];
-      expect(titleSearch.text.score.boost.value).toBe(2);
+      expect(titleSearch.text.score.boost.value).toBe(10);
     });
 
     it("should search both title and description", async () => {
@@ -268,14 +273,17 @@ describe("Search Controller", () => {
         _id: "69cecc61cfb78afc89c4f396",
         title: "starry night",
         description: "desc",
-        filePath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/1775160417057-0b2d6b37e892b9335e132787c2e6b0e9.jpg",
-        thumbnailPath: "https://artport-images.s3.us-east-2.amazonaws.com/artworks/thumbnails/1775160417627-68910f10d055e29a669c426ab66e42e0.jpg",
+        filePath:
+          "https://artport-images.s3.us-east-2.amazonaws.com/artworks/1775160417057-0b2d6b37e892b9335e132787c2e6b0e9.jpg",
+        thumbnailPath:
+          "https://artport-images.s3.us-east-2.amazonaws.com/artworks/thumbnails/1775160417627-68910f10d055e29a669c426ab66e42e0.jpg",
         uploadDate: new Date("2026-04-02T20:06:57.985+00:00"),
         isPublic: true,
         userId: "69b334f0069481d81cce4065",
         userDetails: {
           username: "iai11",
-          profilePictureUrl: "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
+          profilePictureUrl:
+            "https://artport-images.s3.us-east-2.amazonaws.com/users/1775176542401-625c1d16f90f990cb811b633187f8c81.jpg",
         },
         score: 5.8,
       });

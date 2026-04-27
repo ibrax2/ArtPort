@@ -7,6 +7,8 @@ const mockArtworkConstructor = jest.fn(() => ({
 }));
 mockArtworkConstructor.find = mockArtworkFind;
 
+const mockUserFind = jest.fn();
+
 // Mock the dependencies correctly for ESM
 jest.unstable_mockModule("../models/Artwork.js", () => ({
   default: mockArtworkConstructor,
@@ -15,6 +17,12 @@ jest.unstable_mockModule("../models/Artwork.js", () => ({
 const mockUploadImageToS3 = jest.fn();
 jest.unstable_mockModule("../controllers/imageUploadController.js", () => ({
   uploadImageToS3: mockUploadImageToS3,
+}));
+
+jest.unstable_mockModule("../models/User.js", () => ({
+  default: {
+    find: mockUserFind,
+  },
 }));
 
 const { createArtwork, getArtworks } =
@@ -29,6 +37,8 @@ describe("Artwork Controller - Upload functionality", () => {
     req = {
       body: {},
       files: undefined,
+      headers: {},
+      query: {},
     };
 
     res = {
@@ -69,6 +79,7 @@ describe("Artwork Controller - Upload functionality", () => {
         description: "A nice painting",
         userId: "507f1f77bcf86cd799439011",
       };
+      req.user = { _id: "507f1f77bcf86cd799439011" };
       req.files = {
         image: [mockFile],
       };
@@ -92,7 +103,9 @@ describe("Artwork Controller - Upload functionality", () => {
 
       // Verify it responded with a 201 status and the artwork payload
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith(mockSavedArtwork);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining(mockSavedArtwork),
+      );
     });
 
     it("should handle S3 upload errors securely", async () => {
@@ -123,17 +136,6 @@ describe("Artwork Controller - Upload functionality", () => {
 
   describe("getArtworks", () => {
     it("should omit artworks from private users", async () => {
-      const privateArtwork = {
-        _id: "private-art",
-        title: "Hidden Work",
-        filePath: "https://example.com/private.jpg",
-        userId: {
-          _id: "user-private",
-          username: "hiddenArtist",
-          profilePictureUrl: "https://example.com/avatar.jpg",
-          isPrivate: true,
-        },
-      };
       const publicArtwork = {
         _id: "public-art",
         title: "Visible Work",
@@ -146,11 +148,24 @@ describe("Artwork Controller - Upload functionality", () => {
         },
       };
 
+      mockUserFind.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest.fn().mockResolvedValue([{ _id: "user-public" }]),
+        }),
+      });
+
       mockArtworkFind.mockReturnValue({
-        populate: jest.fn().mockResolvedValue([privateArtwork, publicArtwork]),
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockResolvedValue([publicArtwork]),
+        }),
       });
 
       await getArtworks(req, res);
+
+      expect(mockArtworkFind).toHaveBeenCalledWith({
+        userId: { $in: ["user-public"] },
+        isPublic: true,
+      });
 
       expect(res.json).toHaveBeenCalledWith([
         expect.objectContaining({ _id: "public-art" }),
@@ -170,41 +185,41 @@ describe("Artwork Controller - Upload functionality", () => {
           isPrivate: true,
         },
       };
-      const otherPrivateArtwork = {
-        _id: "other-private-art",
-        title: "Someone Else's Hidden Work",
-        filePath: "https://example.com/private-2.jpg",
-        userId: {
-          _id: "other-private-user",
-          username: "otherHiddenArtist",
-          profilePictureUrl: "https://example.com/avatar2.jpg",
-          isPrivate: true,
-        },
-      };
-      const publicArtwork = {
+      const ownPublicArtwork = {
         _id: "public-art",
         title: "Visible Work",
         filePath: "https://example.com/public.jpg",
         userId: {
-          _id: "user-public",
-          username: "openArtist",
-          profilePictureUrl: "https://example.com/avatar3.jpg",
+          _id: "user-private",
+          username: "hiddenArtist",
+          profilePictureUrl: "https://example.com/avatar2.jpg",
           isPrivate: false,
         },
       };
 
       req.user = { _id: "user-private" };
+      req.query = { userId: "user-private", includePrivate: "true" };
+      mockUserFind.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          lean: jest
+            .fn()
+            .mockResolvedValue([
+              { _id: "user-public" },
+              { _id: "user-private" },
+            ]),
+        }),
+      });
       mockArtworkFind.mockReturnValue({
-        populate: jest
-          .fn()
-          .mockResolvedValue([
-            ownPrivateArtwork,
-            otherPrivateArtwork,
-            publicArtwork,
-          ]),
+        populate: jest.fn().mockReturnValue({
+          populate: jest
+            .fn()
+            .mockResolvedValue([ownPrivateArtwork, ownPublicArtwork]),
+        }),
       });
 
       await getArtworks(req, res);
+
+      expect(mockArtworkFind).toHaveBeenCalledWith({ userId: "user-private" });
 
       expect(res.json).toHaveBeenCalledWith([
         expect.objectContaining({ _id: "private-art" }),

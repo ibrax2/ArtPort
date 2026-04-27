@@ -60,9 +60,9 @@ export const getArtworks = async (req, res) => {
   try {
     const currentUser = await getOptionalCurrentUser(req);
     const requestedUserId =
-      typeof req.query.userId === "string" ? req.query.userId.trim() : "";
+      typeof req.query?.userId === "string" ? req.query.userId.trim() : "";
     const includePrivate =
-      String(req.query.includePrivate || "")
+      String(req.query?.includePrivate || "")
         .trim()
         .toLowerCase() === "true";
 
