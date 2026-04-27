@@ -253,3 +253,51 @@
 .upload-route {
   padding: 1rem;
 }
+
+.upload-error-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.upload-error-modal {
+  background: #fff;
+  border-radius: 1rem;
+  padding: 2rem 2.5rem;
+  max-width: 26rem;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.upload-error-modal-text {
+  margin: 0;
+  color: #991b1b;
+  font-size: 1.1rem;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.upload-error-dismiss {
+  background-color: #991b1b;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 2rem;
+  cursor: pointer;
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+.upload-error-dismiss:hover {
+  background-color: #7f1d1d;
+}

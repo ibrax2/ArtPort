@@ -54,6 +54,14 @@ app.get("/", (req, res) => {
   res.send("ArtPort API is running!");
 });
 
+app.use((err, req, res, next) => {
+  if (err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({ message: "Image is too large. Maximum size is 5 MB." });
+  }
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({ message: err.message || "Something went wrong." });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

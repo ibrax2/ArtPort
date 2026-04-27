@@ -14,6 +14,8 @@ import {
 const ACCEPT_IMAGES =
   "image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/heic,image/heif";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB — must match server/src/middleware/upload.js
+
 const THUMB_ASPECT = 1;
 
 export type UploadCardProps = {
@@ -54,7 +56,12 @@ export default function UploadCardExact({ onUpload, userId, folderOptions = [] }
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type || !file.type.startsWith("image/")) {
-      setSubmitError("please only upload image files");
+      setSubmitError("Please only upload image files.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setSubmitError("Image is too large. Maximum size is 5 MB.");
       e.target.value = "";
       return;
     }
@@ -168,6 +175,10 @@ export default function UploadCardExact({ onUpload, userId, folderOptions = [] }
     try {
       setSubmitting(true);
       await onUpload(formData);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Upload failed. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -347,9 +358,27 @@ export default function UploadCardExact({ onUpload, userId, folderOptions = [] }
       </div>
 
       {submitError ? (
-        <p className="upload-submit-error" role="alert">
-          {submitError}
-        </p>
+        <div
+          className="upload-error-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Upload error"
+          onClick={() => setSubmitError("")}
+        >
+          <div
+            className="upload-error-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="upload-error-modal-text">{submitError}</p>
+            <button
+              type="button"
+              className="upload-error-dismiss"
+              onClick={() => setSubmitError("")}
+            >
+              OK
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {onUpload && !userId ? (
