@@ -10,7 +10,7 @@ To access the project, please use the link below:
 # 1.0 release features:
 
 - Improved feedback/critique forms creation, now supports multiple pre-made templates and.
-- Submitting feedback via forms and editing the previously submitted feedback.
+- Submitting feedback to other users via forms.
 - Reviewing feedback summaries of the received feedback. 
 - User profile customization:
   - Uploading banners.
